@@ -1,0 +1,54 @@
+<%- include('partials/header') %>
+<div class="auth-page">
+  <div class="auth-box">
+    <h1>Vérifie ton email</h1>
+    <p class="auth-subtitle">On a envoyé un code à <strong><%= email %></strong></p>
+    <% if (error) { %><div class="alert-error"><%= error %></div><% } %>
+    <% if (typeof resent !== 'undefined' && resent) { %><div class="alert-success">Un nouveau code a été envoyé.</div><% } %>
+    <form method="POST" action="/auth/verify-email">
+      <label>Code à 6 chiffres
+        <input
+          type="text"
+          name="code"
+          required
+          maxlength="6"
+          minlength="6"
+          pattern="[0-9]{6}"
+          inputmode="numeric"
+          autofocus
+          placeholder="000000"
+          style="text-align:center;font-size:28px;font-weight:700;letter-spacing:8px;"
+        >
+      </label>
+      <button type="submit" class="btn-primary btn-full">Valider mon compte</button>
+    </form>
+    <form method="POST" action="/auth/resend-code" style="margin-top:10px">
+      <button type="submit" id="resend-btn" class="btn-secondary btn-full" <% if (resendCooldown > 0) { %>disabled<% } %>>
+        <% if (resendCooldown > 0) { %>Renvoyer dans <span id="countdown"><%= resendCooldown %></span>s<% } else { %>Renvoyer le code<% } %>
+      </button>
+    </form>
+    <p class="auth-link" style="margin-top:16px;font-size:13px;color:#999;">
+      Le code expire dans 15 minutes.<br>
+      Mauvaise adresse ? <a href="/auth/register">Recommencer</a>
+    </p>
+  </div>
+</div>
+<script>
+  (function () {
+    const btn = document.getElementById('resend-btn');
+    const countdownEl = document.getElementById('countdown');
+    if (!countdownEl) return;
+    let seconds = parseInt(countdownEl.textContent, 10);
+    const interval = setInterval(function () {
+      seconds--;
+      if (seconds <= 0) {
+        clearInterval(interval);
+        btn.disabled = false;
+        btn.textContent = 'Renvoyer le code';
+      } else {
+        countdownEl.textContent = seconds;
+      }
+    }, 1000);
+  })();
+</script>
+<%- include('partials/footer') %>

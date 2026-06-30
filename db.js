@@ -89,6 +89,7 @@ module.exports = db;
 // Migrations
 try { db.exec(`ALTER TABLE users ADD COLUMN banned INTEGER DEFAULT 0`); } catch (e) {}
 try { db.exec(`ALTER TABLE users ADD COLUMN session_version INTEGER DEFAULT 0`); } catch (e) {}
+try { db.exec(`ALTER TABLE users ADD COLUMN email_verified INTEGER DEFAULT 0`); } catch (e) {}
 
 // Table password_resets
 db.exec(`
@@ -99,5 +100,18 @@ db.exec(`
     expires_at DATETIME NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+`);
+
+// Table email_verifications (pending registrations - code 6 chiffres)
+db.exec(`
+  CREATE TABLE IF NOT EXISTS email_verifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL UNIQUE,
+    code TEXT NOT NULL,
+    username TEXT NOT NULL,
+    password TEXT NOT NULL,
+    expires_at DATETIME NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 `);

@@ -55,10 +55,152 @@ router.post('/register', async (req, res) => {
   if (!/^[a-zA-Z0-9_\-\.]+$/.test(username)) return res.render('register', { error: 'Le pseudo contient des caractères interdits.' });
   const existing = db.prepare('SELECT id FROM users WHERE email = ? OR username = ?').get(email, username);
   if (existing) return res.render('register', { error: 'Email ou pseudo déjà utilisé.' });
+
   const hash = await bcrypt.hash(password, 10);
-  const result = db.prepare('INSERT INTO users (username, email, password) VALUES (?, ?, ?)').run(username, email, hash);
-  req.session.user = { id: result.lastInsertRowid, username, points: 0, level: 1, role: 'member' };
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const expires = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 min
+
+  db.prepare('DELETE FROM email_verifications WHERE email = ?').run(email);
+  db.prepare('INSERT INTO email_verifications (email, code, username, password, expires_at) VALUES (?, ?, ?, ?, ?)').run(email, code, username, hash, expires);
+
+  try {
+    await sendBrevoEmail({
+      to: email,
+      subject: 'Ton code de vérification Kiviomap',
+      html: `
+        <!DOCTYPE html>
+        <html lang="fr">
+        <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+        <body style="margin:0;padding:0;background:#f4f4f4;font-family:'Segoe UI',Arial,sans-serif">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:40px 16px">
+            <tr><td align="center">
+              <table width="520" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
+                <tr><td style="padding:32px 40px 24px">
+                  <p style="margin:0;font-size:22px;font-weight:700;color:#1a1a1a">Kiviomap</p>
+                </td></tr>
+                <tr><td style="padding:0 40px 32px">
+                  <p style="margin:0 0 20px;font-size:16px;color:#1a1a1a">Bonjour ${username},</p>
+                  <p style="margin:0 0 16px;font-size:15px;color:#444;line-height:1.7">Voici ton code de vérification pour finaliser ton inscription :</p>
+                  <div style="text-align:center;margin:28px 0">
+                    <span style="display:inline-block;background:#f5f0eb;border:2px solid #c87941;border-radius:10px;padding:18px 40px;font-size:36px;font-weight:800;letter-spacing:10px;color:#c87941">${code}</span>
+                  </div>
+                  <p style="margin:0 0 8px;font-size:13px;color:#999;text-align:center">Ce code est valable <strong>15 minutes</strong>.</p>
+                  <hr style="border:none;border-top:1px solid #ebebeb;margin:24px 0">
+                  <p style="margin:0;font-size:13px;color:#999">Si tu n'es pas à l'origine de cette inscription, ignore cet email.</p>
+                </td></tr>
+              </table>
+            </td></tr>
+          </table>
+        </body>
+        </html>
+      `,
+    });
+  } catch (e) {
+    console.error('Erreur envoi mail vérification:', e.response?.data || e.message);
+    return res.render('register', { error: 'Erreur lors de l\'envoi du mail, réessaie.' });
+  }
+
+  req.session.pendingEmail = email;
+  req.session.lastCodeSentAt = Date.now();
+  res.redirect('/auth/verify-email');
+});
+
+router.get('/verify-email', (req, res) => {
+  if (req.session.user) return res.redirect('/');
+  if (!req.session.pendingEmail) return res.redirect('/auth/register');
+  const elapsed = Date.now() - (req.session.lastCodeSentAt || 0);
+  const resendCooldown = elapsed < 60000 ? Math.ceil((60000 - elapsed) / 1000) : 0;
+  res.render('verify-pending', { email: req.session.pendingEmail, error: null, resent: false, resendCooldown });
+});
+
+router.post('/verify-email', async (req, res) => {
+  if (req.session.user) return res.redirect('/');
+  const email = req.session.pendingEmail;
+  if (!email) return res.redirect('/auth/register');
+
+  const { code } = req.body;
+  const pending = db.prepare('SELECT * FROM email_verifications WHERE email = ?').get(email);
+  const elapsed = Date.now() - (req.session.lastCodeSentAt || 0);
+  const resendCooldown = elapsed < 60000 ? Math.ceil((60000 - elapsed) / 1000) : 0;
+
+  if (!pending) {
+    return res.render('verify-pending', { email, error: 'Aucune inscription en attente pour cet email.', resent: false, resendCooldown });
+  }
+  if (new Date(pending.expires_at) < new Date()) {
+    db.prepare('DELETE FROM email_verifications WHERE email = ?').run(email);
+    req.session.pendingEmail = null;
+    return res.render('register', { error: 'Le code a expiré, recommence l\'inscription.' });
+  }
+  if (pending.code !== code.trim()) {
+    return res.render('verify-pending', { email, error: 'Code incorrect, réessaie.', resent: false, resendCooldown });
+  }
+
+  const result = db.prepare('INSERT INTO users (username, email, password, email_verified) VALUES (?, ?, ?, 1)').run(pending.username, email, pending.password);
+  db.prepare('DELETE FROM email_verifications WHERE email = ?').run(email);
+  req.session.pendingEmail = null;
+  req.session.lastCodeSentAt = null;
+  req.session.user = { id: result.lastInsertRowid, username: pending.username, points: 0, level: 1, role: 'member', session_version: 0 };
   res.redirect('/');
+});
+
+router.post('/resend-code', async (req, res) => {
+  if (req.session.user) return res.redirect('/');
+  const email = req.session.pendingEmail;
+  if (!email) return res.redirect('/auth/register');
+
+  const pending = db.prepare('SELECT * FROM email_verifications WHERE email = ?').get(email);
+  if (!pending) return res.redirect('/auth/register');
+
+  const lastSent = req.session.lastCodeSentAt || 0;
+  const elapsed = Date.now() - lastSent;
+  if (elapsed < 60000) {
+    const wait = Math.ceil((60000 - elapsed) / 1000);
+    return res.render('verify-pending', { email, error: null, resent: false, resendCooldown: wait });
+  }
+
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const expires = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+  db.prepare('UPDATE email_verifications SET code = ?, expires_at = ? WHERE email = ?').run(code, expires, email);
+  req.session.lastCodeSentAt = Date.now();
+
+  try {
+    await sendBrevoEmail({
+      to: email,
+      subject: 'Ton nouveau code de vérification Kiviomap',
+      html: `
+        <!DOCTYPE html>
+        <html lang="fr">
+        <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+        <body style="margin:0;padding:0;background:#f4f4f4;font-family:'Segoe UI',Arial,sans-serif">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:40px 16px">
+            <tr><td align="center">
+              <table width="520" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
+                <tr><td style="padding:32px 40px 24px">
+                  <p style="margin:0;font-size:22px;font-weight:700;color:#1a1a1a">Kiviomap</p>
+                </td></tr>
+                <tr><td style="padding:0 40px 32px">
+                  <p style="margin:0 0 20px;font-size:16px;color:#1a1a1a">Bonjour ${pending.username},</p>
+                  <p style="margin:0 0 16px;font-size:15px;color:#444;line-height:1.7">Voici ton nouveau code de vérification :</p>
+                  <div style="text-align:center;margin:28px 0">
+                    <span style="display:inline-block;background:#f5f0eb;border:2px solid #c87941;border-radius:10px;padding:18px 40px;font-size:36px;font-weight:800;letter-spacing:10px;color:#c87941">${code}</span>
+                  </div>
+                  <p style="margin:0 0 8px;font-size:13px;color:#999;text-align:center">Ce code est valable <strong>15 minutes</strong>.</p>
+                  <hr style="border:none;border-top:1px solid #ebebeb;margin:24px 0">
+                  <p style="margin:0;font-size:13px;color:#999">Si tu n'es pas à l'origine de cette inscription, ignore cet email.</p>
+                </td></tr>
+              </table>
+            </td></tr>
+          </table>
+        </body>
+        </html>
+      `,
+    });
+  } catch (e) {
+    console.error('Erreur renvoi code:', e.response?.data || e.message);
+    return res.render('verify-pending', { email, error: 'Erreur lors de l\'envoi, réessaie.', resent: false, resendCooldown: 60 });
+  }
+
+  res.render('verify-pending', { email, error: null, resent: true, resendCooldown: 60 });
 });
 
 router.post('/logout', (req, res) => {
