@@ -1,4 +1,5 @@
 let map, addMarker;
+const IS_LOGGED = document.body && document.body.dataset && document.body.dataset.isLogged === 'true';
 
 document.addEventListener('DOMContentLoaded', () => {
   map = L.map('map', { maxZoom: 19 }).setView([48.8566, 2.3522], 13);
