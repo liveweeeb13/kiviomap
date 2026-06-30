@@ -1,0 +1,339 @@
+<%- include('partials/header') %>
+<div class="detail-page">
+
+<% if (!wifi) { %>
+  <!-- MODE AJOUT -->
+  <div class="detail-header">
+    <div><h1>➕ Ajouter un réseau</h1></div>
+  </div>
+
+  <div class="detail-card">
+    <h3>Nouveau réseau Wi-Fi</h3>
+    <form id="form-add-new">
+      <input type="hidden" id="add-lat" name="lat" value="<%= addLat %>">
+      <input type="hidden" id="add-lng" name="lng" value="<%= addLng %>">
+      <label class="ssid-label">SSID<span class="ssid-help"><a href="/faq/ssid" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0;">?</a></span> *<input type="text" name="ssid" required></label>
+      <label class="ssid-label">Chiffrement<span class="ssid-help"><a href="/faq/security" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0;">?</a></span> *
+        <select name="encryption" id="add-encryption-select" required>
+          <option value="open">Ouvert</option>
+          <option value="wpa2">WPA2</option>
+          <option value="wpa3">WPA3</option>
+          <option value="wep">WEP</option>
+        </select>
+      </label>
+      <label id="add-password-field" class="ssid-label">Mot de passe<span class="ssid-help"><a href="/faq/password" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0;">?</a></span><input type="text" name="password"></label>
+      <label class="ssid-label">Captive portal<span class="ssid-help"><a href="/faq/captiveportal" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0;">?</a></span>
+        <select name="captive_portal"><option value="">•</option><option value="1">Oui</option><option value="0">Non</option></select>
+      </label>
+      <label class="ssid-label">FAI<span class="ssid-help"><a href="/faq/isp" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0;">?</a></span>
+        <select name="isp"><option value="">•</option><option>Orange</option><option>Free</option><option>SFR</option><option>Bouygues</option><option>Autre</option></select>
+      </label>
+      <label class="ssid-label">Lieu<span class="ssid-help"><a href="/faq/location" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0;">?</a></span>
+        <select name="place_type"><option value="">•</option><option>Restaurant</option><option>Café</option><option>Bibliothèque</option><option>Hôtel</option><option>Gare</option><option>Aéroport</option><option>Autre</option></select>
+      </label>
+      <label class="ssid-label">Horaires<span class="ssid-help"><a href="/faq/hours" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0;">?</a></span><input type="text" name="hours" placeholder="Ex. Mo-Fr 08:00-20:00"></label>
+      <label class="ssid-label">Passerelle<span class="ssid-help"><a href="/faq/gateway" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0;">?</a></span><input type="text" name="gateway" placeholder="192.168.1.1"></label>
+      <label class="ssid-label">DHCP<span class="ssid-help"><a href="/faq/dhcp" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0;">?</a></span><input type="text" name="dhcp_range" placeholder="192.168.1.1-254"></label>
+      <label class="ssid-label">Débit descendant (Mbps)<span class="ssid-help"><a href="/faq/speedtest" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0;">?</a></span><input type="number" name="download_mbps" min="0" step="0.1"></label>
+      <label class="ssid-label">Débit montant (Mbps)<span class="ssid-help"><a href="/faq/speedtest" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0;">?</a></span><input type="number" name="upload_mbps" min="0" step="0.1"></label>
+      <label class="ssid-label">Ping (ms)<span class="ssid-help"><a href="/faq/speedtest" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0;">?</a></span><input type="number" name="ping_ms" min="0"></label>
+
+      <% if (!addLat || !addLng) { %>
+      <div class="ssid-label" style="margin-bottom:.75rem">
+        <span style="font-size:.8rem;color:var(--text-muted)">Localisation *</span>
+        <div id="add-loc-status" style="margin-top:.4rem;font-size:.82rem;color:var(--text-muted)">Non définie</div>
+        <button type="button" onclick="getAddLocation()" class="btn-secondary" style="margin-top:.5rem;width:100%">📍 Utiliser ma position</button>
+      </div>
+      <% } else { %>
+      <div style="font-size:.82rem;color:var(--green);margin-bottom:.75rem">📍 Position définie depuis la carte</div>
+      <% } %>
+
+      <button type="submit" class="btn-primary" style="width:100%;justify-content:center">Ajouter le réseau</button>
+    </form>
+  </div>
+
+<% } else { %>
+  <!-- MODE DÉTAIL -->
+  <div class="detail-header">
+    <div>
+      <h1>📶 <%= wifi.ssid %></h1>
+      <div class="confidence-bar">
+        <%
+          const score = wifi.confidence_score;
+          const scoreColor = score >= 80 ? '#2ecc71' : score >= 60 ? '#f1c40f' : score >= 35 ? '#e67e22' : '#e74c3c';
+          const scoreEmoji = score >= 80 ? '🟢' : score >= 60 ? '🟡' : score >= 35 ? '🟠' : '🔴';
+        %>
+        <span style="color:<%= scoreColor %>"><%= scoreEmoji %> Score de confiance : <strong><%= score %>%</strong></span>
+        <div class="progress-bar"><div class="progress-fill" style="width:<%= score %>%;background:<%= scoreColor %>"></div></div>
+      </div>
+    </div>
+    <% if (wifi.author_name) { %><small>Ajouté par <strong><%= wifi.author_name %></strong></small><% } %>
+    <% if (wifi.last_verified) { %><small>Dernière vérification : <%= new Date(wifi.last_verified).toLocaleDateString('fr-FR') %></small><% } %>
+  </div>
+
+  <div class="detail-grid">
+    <div class="detail-card">
+      <h3>Réseau</h3>
+      <p>Chiffrement : <strong><%= wifi.encryption.toUpperCase() %></strong></p>
+      <% if (wifi.password) { %><p>Mot de passe : <code class="pwd-reveal"><%= wifi.password %></code></p><% } %>
+      <p>Captive portal : <strong><%= wifi.captive_portal ? 'Oui' : 'Non' %></strong></p>
+      <% if (wifi.gateway) { %><p>Passerelle : <code><%= wifi.gateway %></code></p><% } %>
+      <% if (wifi.dhcp_range) { %><p>DHCP : <code><%= wifi.dhcp_range %></code></p><% } %>
+      <% if (wifi.isp) { %><p>FAI : <strong><%= wifi.isp %></strong></p><% } %>
+      <% if (wifi.place_type) { %><p>Lieu : <strong><%= wifi.place_type %></strong></p><% } %>
+      <% if (wifi.hours) { %><p>Horaires : <strong><%= wifi.hours %></strong></p><% } %>
+    </div>
+
+    <div class="detail-card">
+      <h3>Performances moyennes</h3>
+      <% if (stats.avg_download) { %><p>Descendant : <strong><%= stats.avg_download %> Mbps</strong></p><% } %>
+      <% if (stats.avg_upload) { %><p>Montant : <strong><%= stats.avg_upload %> Mbps</strong></p><% } %>
+      <% if (stats.avg_ping) { %><p>Ping : <strong><%= stats.avg_ping %> ms</strong></p><% } %>
+      <p>Confirmations : <strong><%= stats.works %></strong> &nbsp; Signalements : <strong><%= stats.broken %></strong></p>
+    </div>
+  </div>
+
+  <% if (user) { %>
+  <div class="action-bar">
+    <button class="btn-green" onclick="doVerify('works')">✅ Fonctionne</button>
+    <button class="btn-red" onclick="doVerify('broken')">❌ Ne fonctionne plus</button>
+  </div>
+
+  <!-- Section édition -->
+  <div id="edit-section" class="detail-card" style="margin-top:2rem">
+    <h3>Modifier ce réseau</h3>
+    <form id="form-edit">
+      <label class="ssid-label" style="display:block;">SSID<span class="ssid-help"><a href="/faq/ssid" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0;">?</a></span> *<br><input type="text" name="ssid" value="<%= wifi.ssid %>" required></label>
+      <label class="ssid-label">Chiffrement<span class="ssid-help"><a href="/faq/security" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0;">?</a></span> *
+        <select name="encryption" id="encryption-select" required>
+          <option value="open" <%=wifi.encryption==='open'?'selected':''%>>Ouvert</option>
+          <option value="wpa2" <%=wifi.encryption==='wpa2'?'selected':''%>>WPA2</option>
+          <option value="wpa3" <%=wifi.encryption==='wpa3'?'selected':''%>>WPA3</option>
+          <option value="wep" <%=wifi.encryption==='wep'?'selected':''%>>WEP</option>
+        </select>
+      </label>
+      <label id="password-field" class="ssid-label">Mot de passe<span class="ssid-help"><a href="/faq/password" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0;">?</a></span><input type="text" name="password" value="<%= wifi.password || '' %>"></label>
+      <label class="ssid-label">Captive portal<span class="ssid-help"><a href="/faq/captiveportal" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0;">?</a></span>
+        <select name="captive_portal">
+          <option value="">•</option>
+          <option value="1" <%=wifi.captive_portal?'selected':''%>>Oui</option>
+          <option value="0" <%=!wifi.captive_portal?'selected':''%>>Non</option>
+        </select>
+      </label>
+      <label class="ssid-label">FAI<span class="ssid-help"><a href="/faq/isp" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0;">?</a></span><select name="isp"><option value="">•</option><option <%=wifi.isp==='Orange'?'selected':''%>>Orange</option><option <%=wifi.isp==='Free'?'selected':''%>>Free</option><option <%=wifi.isp==='SFR'?'selected':''%>>SFR</option><option <%=wifi.isp==='Bouygues'?'selected':''%>>Bouygues</option><option <%=wifi.isp==='Autre'?'selected':''%>>Autre</option></select></label>
+      <label class="ssid-label">Lieu<span class="ssid-help"><a href="/faq/location" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0;">?</a></span><select name="place_type"><option value="">•</option><option <%=wifi.place_type==='Restaurant'?'selected':''%>>Restaurant</option><option <%=wifi.place_type==='Café'?'selected':''%>>Café</option><option <%=wifi.place_type==='Bibliothèque'?'selected':''%>>Bibliothèque</option><option <%=wifi.place_type==='Hôtel'?'selected':''%>>Hôtel</option><option <%=wifi.place_type==='Gare'?'selected':''%>>Gare</option><option <%=wifi.place_type==='Aéroport'?'selected':''%>>Aéroport</option><option <%=wifi.place_type==='Autre'?'selected':''%>>Autre</option></select></label>
+      <label class="ssid-label">Horaires<span class="ssid-help"><a href="/faq/hours" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0;">?</a></span><input type="text" name="hours" value="<%= wifi.hours || '' %>" placeholder="Ex. Mo-Fr 08:00-20:00, Sa 10:00-18:00"></label>
+      <label class="ssid-label">Passerelle<span class="ssid-help"><a href="/faq/gateway" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0;">?</a></span><input type="text" name="gateway" value="<%= wifi.gateway || '' %>"></label>
+      <label class="ssid-label">DHCP<span class="ssid-help"><a href="/faq/dhcp" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0;">?</a></span><input type="text" name="dhcp_range" value="<%= wifi.dhcp_range || '' %>"></label>
+      <label class="ssid-label">Débit descendant (Mbps)<span class="ssid-help"><a href="/faq/speedtest" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0;">?</a></span><input type="number" name="download_mbps" min="0" step="0.1" value="<%= wifi.download_mbps || '' %>"></label>
+      <label class="ssid-label">Débit montant (Mbps)<span class="ssid-help"><a href="/faq/speedtest" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0;">?</a></span><input type="number" name="upload_mbps" min="0" step="0.1" value="<%= wifi.upload_mbps || '' %>"></label>
+      <label class="ssid-label">Ping (ms)<span class="ssid-help"><a href="/faq/speedtest" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0;">?</a></span><input type="number" name="ping_ms" min="0" value="<%= wifi.ping_ms || '' %>"></label>
+      <label class="ssid-label">Latitude (Nord)<span class="ssid-help"><a href="/faq/coordinates" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0;">?</a></span><input type="number" name="lat" step="any" value="<%= wifi.lat %>"></label>
+      <label class="ssid-label">Longitude (Est)<span class="ssid-help"><a href="/faq/coordinates" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0;">?</a></span><input type="number" name="lng" step="any" value="<%= wifi.lng %>"></label>
+      <button type="submit" class="btn-primary">Sauvegarder</button>
+    </form>
+  </div>
+
+  <!-- Commentaires -->
+  <div class="detail-card" style="margin-top:2rem">
+    <h3>Ajouter un commentaire</h3>
+    <form id="form-comment">
+      <textarea name="content" rows="3" placeholder="Votre commentaire..." required></textarea>
+      <button type="submit" class="btn-primary" style="margin-top:.5rem">Envoyer</button>
+    </form>
+  </div>
+  <% } %>
+
+  <% if (comments.length) { %>
+  <div class="detail-card" style="margin-top:1rem">
+    <h3>Commentaires</h3>
+    <div id="comments-list">
+    <% comments.forEach(c => { %>
+    <div class="comment">
+      <strong><%= c.username %></strong> <small><%= new Date(c.created_at).toLocaleDateString('fr-FR') %></small>
+      <p><%= c.content %></p>
+    </div>
+    <% }) %>
+    </div>
+    <div class="pagination" id="comments-pagination"></div>
+  </div>
+  <% } %>
+
+  <% if (history.length) { %>
+  <div class="detail-card" style="margin-top:1rem">
+    <h3>Historique</h3>
+    <ul class="history-list" id="history-list">
+      <%
+        function formatDiffValue(value) {
+          if (value === null || value === undefined || value === '') return '•';
+          if (typeof value === 'boolean') return value ? 'Oui' : 'Non';
+          return String(value);
+        }
+        function normalizeDiffValue(value) {
+          if (value === '1' || value === 1 || value === true || value === 'on') return true;
+          if (value === '0' || value === 0 || value === false || value === '' || value === null || value === undefined) return null;
+          return value;
+        }
+        function buildDiffRows(snapshot) {
+          if (!snapshot || !snapshot.before || !snapshot.after) return [];
+          const fields = ['ssid', 'password', 'encryption', 'captive_portal', 'gateway', 'dhcp_range', 'isp', 'place_type', 'hours', 'download_mbps', 'upload_mbps', 'ping_ms'];
+          return fields.map(field => {
+            const oldValue = normalizeDiffValue(snapshot.before[field]);
+            const newValue = normalizeDiffValue(snapshot.after[field]);
+            const oldText = oldValue === null ? '•' : oldValue === true ? 'Oui' : oldValue === false ? 'Non' : String(oldValue);
+            const newText = newValue === null ? '•' : newValue === true ? 'Oui' : newValue === false ? 'Non' : String(newValue);
+            if (oldText === newText) return null;
+            return { field, oldText, newText, kind: oldValue === null ? 'added' : newValue === null ? 'removed' : 'changed' };
+          }).filter(Boolean);
+        }
+      %>
+      <% history.forEach(h => { %>
+      <li class="history-entry history-entry--<%= h.action.includes('✅') ? 'success' : h.action.includes('❌') || h.action.includes('Ne fonctionne') ? 'danger' : h.action.includes('📶') ? 'info' : 'neutral' %>">
+        <div class="history-bullet"></div>
+        <div class="history-main">
+          <div class="history-header">
+            <div class="history-meta">
+              <strong><%= h.username %></strong>
+              <span class="history-action"><%= h.action %></span>
+            </div>
+            <small><%= new Date(h.created_at).toLocaleDateString('fr-FR') %></small>
+          </div>
+          <% const snapshotData = h.snapshot ? JSON.parse(h.snapshot) : null; %>
+          <% if (snapshotData && snapshotData.before && snapshotData.after) { %>
+          <div class="history-diff">
+            <% buildDiffRows(snapshotData).forEach(item => { %>
+            <div class="history-change <%= item.kind %>">
+              <span class="history-field-name"><%= item.field %></span>
+              <span class="history-old"><%= item.oldText %></span>
+              <span class="history-new"><%= item.newText %></span>
+            </div>
+            <% }) %>
+          </div>
+          <% } %>
+        </div>
+      </li>
+      <% }) %>
+    </ul>
+    <div class="pagination" id="history-pagination"></div>
+  </div>
+  <% } %>
+
+<% } %>
+
+  <a href="/" class="btn-secondary" style="margin-top:1.5rem;display:inline-block">← Retour à la carte</a>
+</div>
+
+<% if (user) { %>
+<script>
+<% if (wifi) { %>
+const WIFI_ID = <%= wifi.id %>;
+
+async function doVerify(status) {
+  const r = await fetch(`/wifi/${WIFI_ID}/verify`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ status }) });
+  const json = await r.json();
+  if (r.status === 429) return showSnackbar(`Cooldown actif, réessaye dans ${json.remaining}h`);
+  if (r.ok) location.reload();
+}
+
+const encryptionSelect = document.getElementById('encryption-select');
+const passwordField = document.getElementById('password-field');
+function togglePasswordField() {
+  const isOpen = encryptionSelect.value === 'open';
+  passwordField.style.display = isOpen ? 'none' : '';
+  passwordField.querySelector('input').disabled = isOpen;
+}
+encryptionSelect.addEventListener('change', togglePasswordField);
+togglePasswordField();
+
+document.getElementById('form-edit').addEventListener('submit', async e => {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target));
+  await fetch(`/wifi/${WIFI_ID}/edit`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+  location.reload();
+});
+
+document.getElementById('form-comment').addEventListener('submit', async e => {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target));
+  const r = await fetch(`/wifi/${WIFI_ID}/comment`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+  const json = await r.json();
+  if (r.status === 429) return showSnackbar(`Cooldown actif, réessaye dans ${json.remaining} min`);
+  location.reload();
+});
+
+document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.add('hidden'); }));
+
+function paginate(containerId, paginationId, perPage) {
+  const container = document.getElementById(containerId);
+  const items = Array.from(container.children);
+  const total = items.length;
+  if (total <= perPage) return;
+  let page = 0;
+  function render() {
+    items.forEach((el, i) => el.style.display = (i >= page * perPage && i < (page + 1) * perPage) ? '' : 'none');
+    const pages = Math.ceil(total / perPage);
+    const nav = document.getElementById(paginationId);
+    nav.innerHTML = '';
+    for (let i = 0; i < pages; i++) {
+      const btn = document.createElement('button');
+      btn.textContent = i + 1;
+      btn.className = 'pagination-btn' + (i === page ? ' active' : '');
+      btn.onclick = () => { page = i; render(); };
+      nav.appendChild(btn);
+    }
+  }
+  render();
+}
+paginate('history-list', 'history-pagination', 5);
+paginate('comments-list', 'comments-pagination', 5);
+
+<% } else { %>
+
+const addEncryptionSelect = document.getElementById('add-encryption-select');
+const addPasswordField = document.getElementById('add-password-field');
+function toggleAddPasswordField() {
+  const isOpen = addEncryptionSelect.value === 'open';
+  addPasswordField.style.display = isOpen ? 'none' : '';
+  addPasswordField.querySelector('input').disabled = isOpen;
+}
+addEncryptionSelect.addEventListener('change', toggleAddPasswordField);
+toggleAddPasswordField();
+
+function getAddLocation() {
+  const status = document.getElementById('add-loc-status');
+  status.textContent = 'Récupération…';
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      document.getElementById('add-lat').value = pos.coords.latitude;
+      document.getElementById('add-lng').value = pos.coords.longitude;
+      status.textContent = `📍 ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
+      status.style.color = 'var(--green)';
+    },
+    () => { status.textContent = 'Impossible de récupérer la position'; status.style.color = 'var(--red)'; }
+  );
+}
+
+document.getElementById('form-add-new').addEventListener('submit', async e => {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target));
+  if (!data.lat || !data.lng) return showSnackbar('Veuillez définir une localisation.');
+  const r = await fetch('/wifi/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+  const json = await r.json();
+  if (r.ok) window.location.href = `/wifi/${json.id}`;
+  else showSnackbar(json.error || 'Erreur lors de l\'ajout.');
+});
+
+<% } %>
+
+function showSnackbar(msg) {
+  const s = document.createElement('div');
+  s.className = 'snackbar';
+  s.textContent = msg;
+  document.body.appendChild(s);
+  setTimeout(() => s.classList.add('snackbar-show'), 10);
+  setTimeout(() => { s.classList.remove('snackbar-show'); setTimeout(() => s.remove(), 300); }, 3000);
+}
+</script>
+<% } %>
+
+<%- include('partials/footer') %>

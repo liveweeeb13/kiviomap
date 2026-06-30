@@ -1,0 +1,17 @@
+<%- include('partials/header') %>
+<div class="auth-page">
+  <div class="auth-box">
+    <h1>Mot de passe oublié</h1>
+    <p class="auth-subtitle">On t'envoie un lien de réinitialisation</p>
+    <% if (error) { %><div class="alert-error"><%= error %></div><% } %>
+    <% if (success) { %><div class="alert-success"><%= success %></div><% } %>
+    <% if (!success) { %>
+    <form method="POST" action="/auth/forgot">
+      <label>Email<input type="email" name="email" required autofocus placeholder="vous@exemple.com"></label>
+      <button type="submit" class="btn-primary btn-full">Envoyer le lien</button>
+    </form>
+    <% } %>
+    <p class="auth-link"><a href="/auth/login">← Retour à la connexion</a></p>
+  </div>
+</div>
+<%- include('partials/footer') %>

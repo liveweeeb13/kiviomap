@@ -1,0 +1,275 @@
+require('dotenv').config();
+const express = require('express');
+const axios = require('axios');
+const session = require('express-session');
+const SQLiteStore = require('connect-sqlite3')(session);
+const path = require('path');
+
+const app = express();
+
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.use(session({
+  store: new SQLiteStore({ db: 'sessions.db' }),
+  secret: 'kiviomap-secret-key-change-in-prod',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 }
+}));
+
+app.use((req, res, next) => {
+  res.locals.user = req.session.user || null;
+  next();
+});
+
+app.use(async (req, res, next) => {
+  if (!req.session.user) return next();
+  const db = require('./db');
+  const user = db.prepare('SELECT banned, session_version FROM users WHERE id = ?').get(req.session.user.id);
+  if (!user || user.banned) {
+    req.session.destroy(() => {});
+    return res.redirect('/auth/login');
+  }
+  if (user.session_version !== req.session.user.session_version) {
+    req.session.destroy(() => {});
+    return res.redirect('/auth/login');
+  }
+  next();
+});
+
+app.use((req, res, next) => {
+  if (req.session.user) {
+    const db = require('./db');
+    const u = db.prepare('SELECT banned, session_version FROM users WHERE id = ?').get(req.session.user.id);
+    if (!u || u.banned || u.session_version !== req.session.user.session_version) {
+      return req.session.destroy(() => res.redirect('/auth/login'));
+    }
+  }
+  next();
+});
+
+async function sendBrevoEmail({ to, subject, html }) {
+  await axios.post(
+    'https://api.brevo.com/v3/smtp/email',
+    {
+      sender: { email: process.env.FROM_EMAIL },
+      to: [{ email: to }],
+      subject,
+      htmlContent: html,
+    },
+    {
+      headers: {
+        'api-key': process.env.BREVO_API_KEY,
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+}
+
+function adminAuth(req, res, next) {
+  if (!req.session.user || req.session.user.role !== 'admin') return res.status(403).send('Accès refusé');
+  next();
+}
+
+app.get('/admin', adminAuth, (req, res) => {
+  const db = require('./db');
+  const users = db.prepare('SELECT id, username, email, points, level, role, banned FROM users ORDER BY id').all();
+  const networks = db.prepare('SELECT id, ssid, lat, lng FROM wifi_points ORDER BY id').all();
+  res.render('admin', { users, networks, success: req.query.success });
+});
+
+app.post('/admin/user/:id/ban', adminAuth, async (req, res) => {
+  const db = require('./db');
+  const user = db.prepare('SELECT username, email FROM users WHERE id = ?').get(req.params.id);
+  if (!user) return res.redirect('/admin');
+  db.prepare('UPDATE users SET banned = 1 WHERE id = ?').run(req.params.id);
+  try {
+    await sendBrevoEmail({
+      to: user.email,
+      subject: 'Votre compte Kiviomap a été banni',
+      html: `
+        <!DOCTYPE html>
+        <html lang="fr">
+        <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+        <body style="margin:0;padding:0;background:#f4f4f4;font-family:'Segoe UI',Arial,sans-serif">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:40px 16px">
+            <tr><td align="center">
+              <table width="520" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
+                <tr><td style="padding:32px 40px 24px">
+                  <p style="margin:0;font-size:22px;font-weight:700;color:#1a1a1a">Kiviomap</p>
+                </td></tr>
+                <tr><td style="padding:0 40px 32px">
+                  <p style="margin:0 0 20px;font-size:16px;color:#1a1a1a">Bonjour ${user.username},</p>
+                  <p style="margin:0 0 16px;font-size:15px;color:#444;line-height:1.7">
+                    Ton compte Kiviomap a été définitivement banni.
+                  </p>
+                  <p style="margin:0 0 16px;font-size:15px;color:#444;line-height:1.7">
+                    Cette décision est définitive.
+                  </p>
+                  <p style="margin:0 0 28px;font-size:15px;color:#444;line-height:1.7">
+                    Cet email a été envoyé automatiquement.
+                  </p>
+                  <hr style="border:none;border-top:1px solid #ebebeb;margin:0 0 24px">
+                  <p style="margin:0;font-size:13px;color:#999">L'équipe Kiviomap</p>
+                </td></tr>
+              </table>
+            </td></tr>
+          </table>
+        </body>
+        </html>
+      `,
+    });
+  } catch (e) {
+    console.error('Erreur envoi mail ban:', e.response?.data || e.message);
+  }
+  res.redirect('/admin');
+});
+
+app.post('/admin/user/:id/unban', adminAuth, async (req, res) => {
+  const db = require('./db');
+  const user = db.prepare('SELECT username, email FROM users WHERE id = ?').get(req.params.id);
+  if (!user) return res.redirect('/admin');
+  db.prepare('UPDATE users SET banned = 0 WHERE id = ?').run(req.params.id);
+  try {
+    await sendBrevoEmail({
+      to: user.email,
+      subject: 'Votre bannissement Kiviomap a été annulé',
+      html: `
+        <!DOCTYPE html>
+        <html lang="fr">
+        <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+        <body style="margin:0;padding:0;background:#f4f4f4;font-family:'Segoe UI',Arial,sans-serif">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:40px 16px">
+            <tr><td align="center">
+              <table width="520" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
+                <tr><td style="padding:32px 40px 24px">
+                  <p style="margin:0;font-size:22px;font-weight:700;color:#1a1a1a">Kiviomap</p>
+                </td></tr>
+                <tr><td style="padding:0 40px 32px">
+                  <p style="margin:0 0 20px;font-size:16px;color:#1a1a1a">Bonjour ${user.username},</p>
+                  <p style="margin:0 0 16px;font-size:15px;color:#444;line-height:1.7">
+                    Ton bannissement a été annulé. Tu peux de nouveau te connecter à ton compte Kiviomap.
+                  </p>
+                  <hr style="border:none;border-top:1px solid #ebebeb;margin:0 0 24px">
+                  <p style="margin:0;font-size:13px;color:#999">Cet email a été envoyé automatiquement.</p>
+                </td></tr>
+              </table>
+            </td></tr>
+          </table>
+        </body>
+        </html>
+      `,
+    });
+  } catch (e) {
+    console.error('Erreur envoi mail unban:', e.response?.data || e.message);
+  }
+  res.redirect('/admin');
+});
+
+app.post('/admin/network/:id/delete', adminAuth, (req, res) => {
+  const db = require('./db');
+  db.prepare('DELETE FROM verifications WHERE wifi_id = ?').run(req.params.id);
+  db.prepare('DELETE FROM votes WHERE wifi_id = ?').run(req.params.id);
+  db.prepare('DELETE FROM comments WHERE wifi_id = ?').run(req.params.id);
+  db.prepare('DELETE FROM wifi_history WHERE wifi_id = ?').run(req.params.id);
+  db.prepare('DELETE FROM wifi_points WHERE id = ?').run(req.params.id);
+  res.redirect('/admin');
+});
+
+app.post('/admin/user/:id/ban', adminAuth, (req, res) => {
+  const db = require('./db');
+  db.prepare('UPDATE users SET banned = 1, session_version = session_version + 1 WHERE id = ?').run(req.params.id);
+  res.redirect('/admin?success=1');
+});
+
+app.post('/admin/user/:id/unban', adminAuth, (req, res) => {
+  const db = require('./db');
+  db.prepare('UPDATE users SET banned = 0 WHERE id = ?').run(req.params.id);
+  res.redirect('/admin?success=1');
+});
+
+app.post('/admin/user/:id', adminAuth, async (req, res) => {
+  const db = require('./db');
+  const bcrypt = require('bcrypt');
+  const { password, points, role } = req.body;
+  if (password && password.trim()) {
+    const hash = await bcrypt.hash(password, 10);
+    db.prepare('UPDATE users SET password=?, points=?, level=MIN(100, CAST(1 + SQRT(points / 10.0) AS INT)), role=?, session_version=session_version+1 WHERE id=?').run(hash, points, role, req.params.id);
+  } else {
+    db.prepare('UPDATE users SET points=?, level=MIN(100, CAST(1 + SQRT(points / 10.0) AS INT)), role=? WHERE id=?').run(points, role, req.params.id);
+  }
+  if (req.session.user.id == req.params.id) {
+    const updated = db.prepare('SELECT * FROM users WHERE id=?').get(req.params.id);
+    req.session.user.role = updated.role;
+    req.session.user.points = updated.points;
+    req.session.user.level = updated.level;
+  }
+  res.redirect('/admin?success=1');
+});
+
+app.use('/', require('./routes/map'));
+app.use('/auth', require('./routes/auth'));
+app.use('/wifi', require('./routes/wifi'));
+
+app.get('/faq/speedtest', (req, res) => {
+  res.render('faq-speedtest');
+});
+
+app.get('/faq/ssid', (req, res) => {
+  res.render('faq-ssid');
+});
+
+app.get('/faq/security', (req, res) => {
+  res.render('faq-security');
+});
+
+app.get('/faq/password', (req, res) => {
+  res.render('faq-password');
+});
+
+app.get('/faq/captiveportal', (req, res) => {
+  res.render('faq-captiveportal');
+});
+
+app.get('/faq/isp', (req, res) => {
+  res.render('faq-isp');
+});
+
+app.get('/faq/location', (req, res) => {
+  res.render('faq-location');
+});
+
+app.get('/faq/hours', (req, res) => {
+  res.render('faq-hours');
+});
+
+app.get('/faq/gateway', (req, res) => {
+  res.render('faq-gateway');
+});
+
+app.get('/faq/coordinates', (req, res) => {
+  res.render('faq-coordinates');
+});
+
+app.get('/faq/dhcp', (req, res) => {
+  res.render('faq-dhcp');
+});
+
+// Speed test endpoints
+app.get('/speedtest/download', (req, res) => {
+  const size = 5 * 1024 * 1024; // 5MB
+  res.setHeader('Content-Type', 'application/octet-stream');
+  res.setHeader('Content-Length', size);
+  res.setHeader('Cache-Control', 'no-store');
+  res.send(Buffer.alloc(size));
+});
+
+app.post('/speedtest/upload', (req, res) => {
+  res.json({ ok: true });
+});
+
+app.listen(2004, () => console.log('Kiviomap running on http://localhost:2004'));

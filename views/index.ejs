@@ -1,0 +1,15 @@
+<%- include('partials/header') %>
+
+<div class="map-container">
+  <div id="search-bar" class="search-bar">
+    <input id="search-input" type="text" placeholder="Lieu ou coordonnées..." autocomplete="off">
+    <div id="search-results" class="search-results"></div>
+  </div>
+  <div id="map"></div>
+</div>
+
+<script>
+const IS_LOGGED = <%= user ? 'true' : 'false' %>;
+</script>
+<script src="/js/map.js"></script>
+<%- include('partials/footer') %>

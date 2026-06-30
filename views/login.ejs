@@ -1,0 +1,17 @@
+<%- include('partials/header') %>
+<div class="auth-page">
+  <div class="auth-box">
+    <h1>Connexion</h1>
+    <p class="auth-subtitle">Accédez à votre compte Kiviomap</p>
+    <% if (error) { %><div class="alert-error"><%= error %></div><% } %>
+    <% if (typeof success !== 'undefined' && success) { %><div class="alert-success"><%= success %></div><% } %>
+    <form method="POST" action="/auth/login">
+      <label>Email<input type="email" name="email" required autofocus placeholder="vous@exemple.com"></label>
+      <label>Mot de passe<input type="password" name="password" required placeholder="••••••••"></label>
+      <button type="submit" class="btn-primary btn-full">Se connecter</button>
+    </form>
+    <p class="auth-link"><a href="/auth/forgot">Mot de passe oublié ?</a></p>
+    <p class="auth-link">Pas encore de compte ? <a href="/auth/register">S'inscrire gratuitement</a></p>
+  </div>
+</div>
+<%- include('partials/footer') %>

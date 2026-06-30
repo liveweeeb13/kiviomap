@@ -1,0 +1,45 @@
+<%- include('partials/header') %>
+<div class="leaderboard-page">
+  <h1>🏆 Classement</h1>
+
+  <div class="lb-grid">
+    <div class="detail-card">
+      <h3>🥇 Top contributeurs (points)</h3>
+      <ol>
+        <% topPoints.forEach((u, i) => { %>
+        <li>
+          <span class="lb-rank"><%= i+1 %></span>
+          <span class="user-badge <%= u.level >= 90 ? 'nitro' : u.level >= 10 ? 'star' : '' %>">
+            <%= u.level >= 10 && u.level < 90 ? '⭐ ' : '' %><%= u.username %>
+          </span>
+          <span class="lb-pts"><%= u.points %> pts · niv. <%= u.level %></span>
+        </li>
+        <% }) %>
+      </ol>
+    </div>
+
+    <div class="detail-card">
+      <h3>📡 Plus de réseaux ajoutés</h3>
+      <ol>
+        <% topNetworks.forEach((u, i) => { %>
+        <li><span class="lb-rank"><%= i+1 %></span> <%= u.username %> <span class="lb-pts"><%= u.count %> réseaux</span></li>
+        <% }) %>
+      </ol>
+    </div>
+
+  </div>
+
+  <div class="detail-card" style="margin-top:2rem">
+    <h3>📊 Système de niveaux</h3>
+    <p>Niveaux 1–10 : pseudo en couleur par défaut</p>
+    <p>Niveaux 10–90 : ⭐ étoile à côté du pseudo</p>
+    <p>Niveaux 90–100 : <span class="nitro">pseudo violet/rose</span> (mode Nitro)</p>
+    <table class="points-table">
+      <tr><th>Action</th><th>Points</th></tr>
+      <tr><td>➕ Ajouter un réseau</td><td>+10</td></tr>
+      <tr><td>✏️ Modifier / corriger</td><td>+5</td></tr>
+      <tr><td>✅ Vérification confirmée</td><td>+3</td></tr>
+    </table>
+  </div>
+</div>
+<%- include('partials/footer') %>

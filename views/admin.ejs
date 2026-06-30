@@ -1,0 +1,145 @@
+<%- include('partials/header') %>
+<div class="detail-page">
+  <div class="detail-header">
+    <h1>Administration</h1>
+  </div>
+
+  <div style="display:flex;gap:.75rem;margin-bottom:1.25rem">
+    <button class="btn-primary" onclick="switchTab('users')">👤 Utilisateurs</button>
+    <button class="btn-secondary" onclick="switchTab('networks')">📶 Réseaux</button>
+  </div>
+
+<div id="tab-users" class="detail-card">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Pseudo</th>
+          <th>Email</th>
+          <th>Points</th>
+          <th>Rôle</th>
+          <th>Statut</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% users.forEach(u => { %>
+        <tr>
+          <td class="td-muted"><%= u.id %></td>
+          <td><strong><%= u.username %></strong></td>
+          <td class="td-muted"><%= u.email %></td>
+          <td><%= u.points %></td>
+          <td><%= u.role %></td>
+          <td><span style="color:<%= u.banned ? '#c05a4a' : '#7aaa6a' %>;font-weight:600;font-size:.8rem"><%= u.banned ? 'Banni' : 'Actif' %></span></td>
+          <td class="admin-actions">
+            <button class="admin-btn" data-id="<%= u.id %>" data-points="<%= u.points %>" data-role="<%= u.role %>" data-username="<%= u.username %>" data-email="<%= u.email %>" onclick="openEditUser(this)" title="Modifier">✏️</button>
+            <% if (u.banned) { %>
+            <form action="/admin/user/<%= u.id %>/unban" method="POST" style="display:contents">
+              <button type="submit" class="admin-btn" title="Débannir" style="color:#7aaa6a">🔓</button>
+            </form>
+            <% } else { %>
+            <form action="/admin/user/<%= u.id %>/ban" method="POST" onsubmit="return confirm('Bannir <%= u.username %> ?')" style="display:contents">
+              <button type="submit" class="admin-btn admin-btn-ban" title="Bannir">🔒</button>
+            </form>
+            <% } %>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+<div id="tab-networks" class="detail-card" style="display:none">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>SSID</th>
+        <th>Coordonnées</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% networks.forEach(n => { %>
+      <tr>
+        <td class="td-muted"><%= n.id %></td>
+        <td><strong><%= n.ssid %></strong></td>
+        <td class="td-muted"><%= n.lat.toFixed(5) %>, <%= n.lng.toFixed(5) %></td>
+        <td class="admin-actions">
+          <a href="/wifi/<%= n.id %>" class="admin-btn" title="Éditer" style="text-decoration:none">✏️</a>
+          <form action="/admin/network/<%= n.id %>/delete" method="POST" onsubmit="return confirm('Supprimer ce réseau ?')">
+            <button type="submit" class="admin-btn admin-btn-ban" title="Supprimer">🗑️</button>
+          </form>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal edit user -->
+<div id="modal-edit-user" class="modal hidden">
+  <div class="modal-box">
+    <h2>Modifier l'utilisateur</h2>
+    <form id="form-edit-user" method="POST">
+      <label>Username<input type="text" name="username" id="edit-username"></label>
+      <label>Email<input type="email" name="email" id="edit-email"></label>
+      <label>Mot de passe <small style="color:var(--text-muted)">(laisser vide pour ne pas changer)</small><input type="password" name="password" id="edit-password" placeholder="••••••••"></label>
+      <label>Points<input type="number" name="points" id="edit-points" min="0"></label>
+      <label>Rôle
+        <select name="role" id="edit-role">
+          <option value="member">member</option>
+          <option value="admin">admin</option>
+        </select>
+      </label>
+      <div class="modal-actions">
+        <button type="submit" class="btn-primary">Sauvegarder</button>
+        <button type="button" onclick="closeEditUser()" class="btn-secondary">Annuler</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openEditUser(btn) {
+  const id = btn.dataset.id;
+  const points = btn.dataset.points;
+  const role = btn.dataset.role;
+  const username = btn.dataset.username;
+  const email = btn.dataset.email;
+  document.getElementById('form-edit-user').action = '/admin/user/' + id;
+  document.getElementById('edit-username').value = username;
+  document.getElementById('edit-email').value = email;
+  document.getElementById('edit-password').value = '';
+  document.getElementById('edit-points').value = points;
+  document.getElementById('edit-role').value = role;
+  document.getElementById('modal-edit-user').classList.remove('hidden');
+}
+function closeEditUser() {
+  document.getElementById('modal-edit-user').classList.add('hidden');
+}
+document.getElementById('modal-edit-user').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-edit-user')) closeEditUser();
+});
+
+function showSnackbar(msg) {
+  const s = document.createElement('div');
+  s.className = 'snackbar';
+  s.textContent = msg;
+  document.body.appendChild(s);
+  setTimeout(() => s.classList.add('snackbar-show'), 10);
+  setTimeout(() => { s.classList.remove('snackbar-show'); setTimeout(() => s.remove(), 300); }, 3000);
+}
+
+<% if (success) { %>showSnackbar('Modifications enregistrées.');<% } %>
+
+function switchTab(tab) {
+  document.getElementById('tab-users').style.display = tab === 'users' ? '' : 'none';
+  document.getElementById('tab-networks').style.display = tab === 'networks' ? '' : 'none';
+  document.querySelectorAll('.detail-page > div:first-of-type button').forEach((btn, i) => {
+    btn.className = (tab === 'users' && i === 0) || (tab === 'networks' && i === 1) ? 'btn-primary' : 'btn-secondary';
+  });
+}
+</script>
+
+<%- include('partials/footer') %>
