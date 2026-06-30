@@ -16,7 +16,7 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", "unpkg.com", "cdn.jsdelivr.net", "fonts.googleapis.com"],
       fontSrc: ["'self'", "fonts.gstatic.com", "cdn.jsdelivr.net"],
       imgSrc: ["'self'", "data:", "*.tile.openstreetmap.org", "unpkg.com"],
-      connectSrc: ["'self'"],
+      connectSrc: ["'self'", "https://unpkg.com", "https://cdn.jsdelivr.net"],
     },
   },
 }));

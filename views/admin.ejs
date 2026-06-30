@@ -5,8 +5,8 @@
   </div>
 
   <div style="display:flex;gap:.75rem;margin-bottom:1.25rem">
-    <button class="btn-primary" onclick="switchTab('users')">👤 Utilisateurs</button>
-    <button class="btn-secondary" onclick="switchTab('networks')">📶 Réseaux</button>
+    <button class="btn-primary tab-switch-btn" data-tab="users">👤 Utilisateurs</button>
+    <button class="btn-secondary tab-switch-btn" data-tab="networks">📶 Réseaux</button>
   </div>
 
 <div id="tab-users" class="detail-card">
@@ -32,14 +32,14 @@
           <td><%= u.role %></td>
           <td><span style="color:<%= u.banned ? '#c05a4a' : '#7aaa6a' %>;font-weight:600;font-size:.8rem"><%= u.banned ? 'Banni' : 'Actif' %></span></td>
           <td class="admin-actions">
-            <button class="admin-btn" data-id="<%= u.id %>" data-points="<%= u.points %>" data-role="<%= u.role %>" data-username="<%= u.username %>" data-email="<%= u.email %>" onclick="openEditUser(this)" title="Modifier">✏️</button>
+            <button class="admin-btn admin-edit-btn" data-id="<%= u.id %>" data-points="<%= u.points %>" data-role="<%= u.role %>" data-username="<%= u.username %>" data-email="<%= u.email %>" title="Modifier">✏️</button>
             <% if (u.banned) { %>
-            <form action="/admin/user/<%= u.id %>/unban" method="POST" style="display:contents">
+            <form action="/admin/user/<%= u.id %>/unban" method="POST">
               <button type="submit" class="admin-btn" title="Débannir" style="color:#7aaa6a">🔓</button>
             </form>
             <% } else { %>
-            <form action="/admin/user/<%= u.id %>/ban" method="POST" onsubmit="return confirm('Bannir <%= u.username %> ?')" style="display:contents">
-              <button type="submit" class="admin-btn admin-btn-ban" title="Bannir">🔒</button>
+            <form action="/admin/user/<%= u.id %>/ban" method="POST" class="ban-form" data-username="<%= u.username %>">
+              <button type="button" class="admin-btn admin-btn-ban ban-btn" title="Bannir">🔒</button>
             </form>
             <% } %>
           </td>
@@ -67,7 +67,7 @@
         <td class="td-muted"><%= n.lat.toFixed(5) %>, <%= n.lng.toFixed(5) %></td>
         <td class="admin-actions">
           <a href="/wifi/<%= n.id %>" class="admin-btn" title="Éditer" style="text-decoration:none">✏️</a>
-          <form action="/admin/network/<%= n.id %>/delete" method="POST" onsubmit="return confirm('Supprimer ce réseau ?')">
+          <form action="/admin/network/<%= n.id %>/delete" method="POST" class="delete-network-form">
             <button type="submit" class="admin-btn admin-btn-ban" title="Supprimer">🗑️</button>
           </form>
         </td>
@@ -94,7 +94,7 @@
       </label>
       <div class="modal-actions">
         <button type="submit" class="btn-primary">Sauvegarder</button>
-        <button type="button" onclick="closeEditUser()" class="btn-secondary">Annuler</button>
+        <button type="button" id="close-edit-user-btn" class="btn-secondary">Annuler</button>
       </div>
     </form>
   </div>
@@ -130,6 +130,36 @@ function showSnackbar(msg) {
   setTimeout(() => s.classList.add('snackbar-show'), 10);
   setTimeout(() => { s.classList.remove('snackbar-show'); setTimeout(() => s.remove(), 300); }, 3000);
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.tab-switch-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+
+  document.querySelectorAll('.admin-edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => openEditUser(btn));
+  });
+
+  document.querySelectorAll('.ban-btn').forEach(button => {
+    button.addEventListener('click', event => {
+      const form = button.closest('.ban-form');
+      const username = form?.dataset.username || 'cet utilisateur';
+      if (confirm(`Veux-tu vraiment bannir ${username} ? Cette action est définitive.`)) {
+        form?.submit();
+      }
+    });
+  });
+
+  document.querySelectorAll('.delete-network-form').forEach(form => {
+    form.addEventListener('submit', event => {
+      if (!confirm('Supprimer ce réseau ?')) {
+        event.preventDefault();
+      }
+    });
+  });
+
+  document.getElementById('close-edit-user-btn')?.addEventListener('click', closeEditUser);
+});
 
 <% if (success) { %>showSnackbar('Modifications enregistrées.');<% } %>
 

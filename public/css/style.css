@@ -988,6 +988,9 @@ code {
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
 }
+.admin-table td.admin-actions {
+  vertical-align: middle !important;
+}
 .admin-table tr:last-child td { border-bottom: none; }
 .td-muted { color: var(--text-muted); }
 .admin-input {
@@ -1007,8 +1010,15 @@ code {
   display: flex;
   align-items: center;
   gap: .1rem;
+  vertical-align: middle;
 }
-.admin-actions form { display: contents; }
+.admin-actions form {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  vertical-align: middle;
+  height: 100%;
+}
 .admin-actions .admin-btn {
   opacity: 0;
   transition: opacity .15s;
@@ -1018,6 +1028,17 @@ code {
   font-size: 1rem;
   padding: .2rem .3rem;
   border-radius: var(--radius);
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+}
+.admin-actions .admin-edit-btn {
+  margin-right: .15rem;
+}
+.admin-actions button {
+  vertical-align: middle;
 }
 .admin-table tr:hover .admin-btn { opacity: 1; }
 .admin-btn-ban:hover { background: rgba(192,90,74,.15); }
