@@ -47,7 +47,9 @@ router.get('/register', (req, res) => {
 });
 
 router.post('/register', async (req, res) => {
-  const { username, email, password, confirm_password } = req.body;
+  const { username, email, password, confirm_password, accept_terms, accept_privacy } = req.body;
+  if (!accept_terms) return res.render('register', { error: 'Tu dois accepter les conditions d\'utilisation.' });
+  if (!accept_privacy) return res.render('register', { error: 'Tu dois accepter la politique de confidentialité.' });
   if (password !== confirm_password) return res.render('register', { error: 'Les mots de passe ne correspondent pas.' });
   if (password.length < 6) return res.render('register', { error: 'Mot de passe trop court (min. 6 caractères).' });
   if (username.includes(' ')) return res.render('register', { error: 'Le pseudo ne peut pas contenir d\'espaces.' });

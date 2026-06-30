@@ -1,0 +1,91 @@
+<%- include('partials/header') %>
+<div class="detail-page">
+  <div class="detail-card faq-card">
+    <div class="faq-hero">
+      <div>
+        <p class="faq-kicker">Légal</p>
+        <h1>Politique de confidentialité</h1>
+        <p class="faq-intro">Ce que Kiviomap collecte, pourquoi, et comment exercer tes droits RGPD.</p>
+      </div>
+    </div>
+
+    <div class="terms-box">
+      <h3>1. Responsable du traitement</h3>
+      <p>Kiviomap est responsable du traitement de tes données personnelles. Contact : <a href="mailto:kiviomap@liveweeeb.dpdns.org" class="legal-link">kiviomap@liveweeeb.dpdns.org</a></p>
+    </div>
+
+    <div class="terms-box">
+      <h3>2. Données collectées à l'inscription</h3>
+      <ul>
+        <li>Pseudo (nom d'affichage)</li>
+        <li>Adresse email : vérifiée avant création du compte</li>
+        <li>Mot de passe : hashé avec bcrypt, jamais stocké en clair</li>
+        <li>Date d'inscription</li>
+      </ul>
+    </div>
+
+    <div class="terms-box">
+      <h3>3. Données collectées à l'utilisation</h3>
+      <ul>
+        <li>Points Wi-Fi ajoutés (coordonnées GPS, informations réseau)</li>
+        <li>Votes et commentaires sur les réseaux</li>
+        <li>Points et niveau de contribution</li>
+      </ul>
+    </div>
+
+    <div class="terms-box">
+      <h3>4. Finalités du traitement</h3>
+      <ul>
+        <li>Créer et gérer ton compte</li>
+        <li>Afficher tes contributions sur la carte</li>
+        <li>T'envoyer des emails transactionnels (vérification, réinitialisation)</li>
+        <li>Assurer la sécurité du service</li>
+      </ul>
+    </div>
+
+    <div class="terms-box">
+      <h3>5. Base légale</h3>
+      <p>Le traitement repose sur ton consentement explicite (art. 6.1.a RGPD) et sur l'exécution du contrat de service (art. 6.1.b RGPD).</p>
+    </div>
+
+    <div class="terms-box">
+      <h3>6. Durée de conservation</h3>
+      <ul>
+        <li>Données de compte : jusqu'à suppression du compte</li>
+        <li>Codes de vérification email : 15 minutes</li>
+        <li>Tokens de réinitialisation : 1 heure</li>
+      </ul>
+    </div>
+
+    <div class="terms-box">
+      <h3>7. Partage des données</h3>
+      <p>Tes données ne sont jamais vendues. Seul <strong style="color:var(--text)">Brevo</strong> reçoit ton email pour l'envoi des mails transactionnels.</p>
+    </div>
+
+    <div class="terms-box">
+      <h3>8. Cookies</h3>
+      <p>Kiviomap utilise uniquement un cookie de session technique, nécessaire au fonctionnement du service. Aucun cookie publicitaire ou tracker tiers n'est utilisé.</p>
+    </div>
+
+    <div class="terms-box">
+      <h3>9. Tes droits RGPD</h3>
+      <ul>
+        <li><strong style="color:var(--text)">Accès</strong> : obtenir une copie de tes données</li>
+        <li><strong style="color:var(--text)">Rectification</strong> : corriger des données inexactes</li>
+        <li><strong style="color:var(--text)">Effacement</strong> : supprimer ton compte et toutes tes données</li>
+        <li><strong style="color:var(--text)">Portabilité</strong> : exporter tes données au format JSON</li>
+        <li>Pour exercer ces droits : <a href="mailto:kiviomap@liveweeeb.dpdns.org" class="legal-link">kiviomap@liveweeeb.dpdns.org</a></li>
+      </ul>
+    </div>
+
+    <div class="terms-box">
+      <h3>10. Réclamation</h3>
+      <p>Si tu estimes que tes droits ne sont pas respectés, tu peux déposer une plainte auprès de la <a href="https://www.cnil.fr" target="_blank" class="legal-link">CNIL</a>.</p>
+    </div>
+
+    <div style="margin-top:.5rem;display:flex;gap:1rem;flex-wrap:wrap;">
+      <a href="javascript:history.back()" class="faq-link">← Retour</a>
+    </div>
+  </div>
+</div>
+<%- include('partials/footer') %>

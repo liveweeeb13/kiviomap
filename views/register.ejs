@@ -9,6 +9,14 @@
       <label>Email<input type="email" name="email" required placeholder="vous@exemple.com"></label>
       <label>Mot de passe<input type="password" name="password" required minlength="6" placeholder="6 caractères minimum"></label>
       <label>Confirmer le mot de passe<input type="password" name="confirm_password" required placeholder="••••••••"></label>
+      <label class="terms-check">
+        <input type="checkbox" name="accept_terms" required>
+        <span>J'ai lu et j'accepte les <a href="/terms" class="auth-link-inline">conditions d'utilisation</a></span>
+      </label>
+      <label class="terms-check">
+        <input type="checkbox" name="accept_privacy" required>
+        <span>J'ai lu et j'accepte la <a href="/privacy" class="auth-link-inline">politique de confidentialité</a></span>
+      </label>
       <button type="submit" class="btn-primary btn-full">Créer mon compte</button>
     </form>
     <p class="auth-link">Déjà un compte ? <a href="/auth/login">Se connecter</a></p>

@@ -1,11 +1,25 @@
 require('dotenv').config();
 const express = require('express');
+const helmet = require('helmet');
 const axios = require('axios');
 const session = require('express-session');
 const SQLiteStore = require('connect-sqlite3')(session);
 const path = require('path');
 
 const app = express();
+
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "unpkg.com", "cdn.jsdelivr.net"],
+      styleSrc: ["'self'", "'unsafe-inline'", "unpkg.com", "cdn.jsdelivr.net", "fonts.googleapis.com"],
+      fontSrc: ["'self'", "fonts.gstatic.com", "cdn.jsdelivr.net"],
+      imgSrc: ["'self'", "data:", "*.tile.openstreetmap.org", "unpkg.com"],
+      connectSrc: ["'self'"],
+    },
+  },
+}));
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -211,8 +225,13 @@ app.post('/admin/user/:id', adminAuth, async (req, res) => {
   res.redirect('/admin?success=1');
 });
 
+app.get('/terms', (req, res) => res.render('terms'));
+app.get('/privacy', (req, res) => res.render('privacy'));
+app.get('/legal', (req, res) => res.render('legal'));
+
 app.use('/', require('./routes/map'));
 app.use('/auth', require('./routes/auth'));
+app.use('/account', require('./routes/account'));
 app.use('/wifi', require('./routes/wifi'));
 
 app.get('/faq/speedtest', (req, res) => {

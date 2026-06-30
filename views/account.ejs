@@ -1,0 +1,36 @@
+<%- include('partials/header') %>
+<div class="detail-page">
+  <div class="detail-card faq-card">
+    <div class="faq-hero">
+      <div>
+        <p class="faq-kicker">Mon compte</p>
+        <h1><%= user.username %></h1>
+        <p class="faq-intro">Niveau <%= user.level %> &nbsp;·&nbsp; <%= user.points %> points</p>
+      </div>
+      <a href="/account/settings" class="faq-link">⚙️ Paramètres</a>
+    </div>
+
+    <div class="faq-grid">
+      <div class="faq-box">
+        <h3>Points</h3>
+        <p style="font-size:2rem;font-weight:800;color:var(--primary);margin:0"><%= user.points %></p>
+      </div>
+      <div class="faq-box">
+        <h3>Niveau</h3>
+        <p style="font-size:2rem;font-weight:800;color:var(--text);margin:0"><%= user.level %></p>
+      </div>
+      <div class="faq-box">
+        <h3>Rôle</h3>
+        <p style="font-size:1.1rem;font-weight:700;color:var(--text-soft);margin:0;text-transform:capitalize"><%= user.role %></p>
+      </div>
+    </div>
+
+    <div style="margin-top:1rem;display:flex;gap:1rem;flex-wrap:wrap;">
+      <a href="javascript:history.back()" class="faq-link">← Retour</a>
+      <form action="/auth/logout" method="POST" style="display:inline">
+        <button type="submit" class="faq-link" style="background:none;border:1px solid rgba(255,255,255,.1);cursor:pointer;font-family:inherit;font-size:inherit;color:var(--text);">Déconnexion</button>
+      </form>
+    </div>
+  </div>
+</div>
+<%- include('partials/footer') %>

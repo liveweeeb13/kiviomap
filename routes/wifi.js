@@ -41,7 +41,7 @@ router.get('/:id', (req, res) => {
   if (!wifi) return res.status(404).send('Réseau introuvable');
   const votes = db.prepare(`SELECT type, download_mbps, upload_mbps, ping_ms, reason, comment, u.username, votes.created_at FROM votes JOIN users u ON votes.user_id = u.id WHERE wifi_id = ? ORDER BY votes.created_at DESC`).all(wifi.id);
   const history = db.prepare(`SELECT h.action, h.snapshot, h.created_at, u.username FROM wifi_history h JOIN users u ON h.user_id = u.id WHERE wifi_id = ? ORDER BY h.created_at DESC LIMIT 20`).all(wifi.id);
-  const comments = db.prepare(`SELECT c.content, c.helpful_count, c.created_at, u.username FROM comments c JOIN users u ON c.user_id = u.id WHERE wifi_id = ? ORDER BY c.created_at DESC`).all(wifi.id);
+  const comments = db.prepare(`SELECT c.content, c.created_at, u.username FROM comments c JOIN users u ON c.user_id = u.id WHERE wifi_id = ? ORDER BY c.created_at DESC`).all(wifi.id);
   const verif_stats = db.prepare(`SELECT status, COUNT(*) as count FROM verifications WHERE wifi_id = ? GROUP BY status`).all(wifi.id);
   const works = verif_stats.find(v => v.status === 'works')?.count || 0;
   const broken = verif_stats.find(v => v.status === 'broken')?.count || 0;

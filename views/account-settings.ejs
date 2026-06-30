@@ -1,0 +1,96 @@
+<%- include('partials/header') %>
+<div class="detail-page">
+  <div class="detail-card faq-card">
+    <div class="faq-hero">
+      <div>
+        <p class="faq-kicker">Paramètres</p>
+        <h1>Mon compte</h1>
+        <p class="faq-intro">Modifie tes informations ou gère tes données.</p>
+      </div>
+      <a href="/account" class="faq-link">← Retour</a>
+    </div>
+
+    <% if (typeof success !== 'undefined' && success) { %><div class="alert-success" style="margin-bottom:1rem"><%= success %></div><% } %>
+    <% if (typeof error !== 'undefined' && error) { %><div class="alert-error" style="margin-bottom:1rem"><%= error %></div><% } %>
+
+    <!-- Changer pseudo -->
+    <div class="terms-box">
+      <h3>Changer de pseudo</h3>
+      <form method="POST" action="/account/settings/username" style="margin-top:.75rem;display:flex;flex-direction:column;gap:.75rem;">
+        <label style="font-size:.8rem;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:.5px;">
+          Nouveau pseudo
+          <input type="text" name="username" required minlength="3" maxlength="16" placeholder="nouveau_pseudo" style="display:block;width:100%;margin-top:.3rem;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius);padding:.6rem .85rem;font-size:.95rem;font-family:inherit;">
+        </label>
+        <label style="font-size:.8rem;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:.5px;">
+          Mot de passe actuel
+          <input type="password" name="password" required placeholder="••••••••" style="display:block;width:100%;margin-top:.3rem;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius);padding:.6rem .85rem;font-size:.95rem;font-family:inherit;">
+        </label>
+        <button type="submit" class="btn-primary" style="align-self:flex-start;">Changer le pseudo</button>
+      </form>
+    </div>
+
+    <!-- Changer email -->
+    <div class="terms-box">
+      <h3>Changer d'email</h3>
+      <form method="POST" action="/account/settings/email" style="margin-top:.75rem;display:flex;flex-direction:column;gap:.75rem;">
+        <label style="font-size:.8rem;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:.5px;">
+          Nouvel email
+          <input type="email" name="email" required placeholder="nouveau@exemple.com" style="display:block;width:100%;margin-top:.3rem;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius);padding:.6rem .85rem;font-size:.95rem;font-family:inherit;">
+        </label>
+        <label style="font-size:.8rem;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:.5px;">
+          Mot de passe actuel
+          <input type="password" name="password" required placeholder="••••••••" style="display:block;width:100%;margin-top:.3rem;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius);padding:.6rem .85rem;font-size:.95rem;font-family:inherit;">
+        </label>
+        <button type="submit" class="btn-primary" style="align-self:flex-start;">Changer l'email</button>
+      </form>
+    </div>
+
+    <!-- Changer mot de passe -->
+    <div class="terms-box">
+      <h3>Changer de mot de passe</h3>
+      <form method="POST" action="/account/settings/password" style="margin-top:.75rem;display:flex;flex-direction:column;gap:.75rem;">
+        <label style="font-size:.8rem;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:.5px;">
+          Mot de passe actuel
+          <input type="password" name="old_password" required placeholder="••••••••" style="display:block;width:100%;margin-top:.3rem;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius);padding:.6rem .85rem;font-size:.95rem;font-family:inherit;">
+        </label>
+        <label style="font-size:.8rem;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:.5px;">
+          Nouveau mot de passe
+          <input type="password" name="new_password" required minlength="6" placeholder="6 caractères minimum" style="display:block;width:100%;margin-top:.3rem;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius);padding:.6rem .85rem;font-size:.95rem;font-family:inherit;">
+        </label>
+        <label style="font-size:.8rem;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:.5px;">
+          Confirmer le nouveau mot de passe
+          <input type="password" name="confirm_password" required placeholder="••••••••" style="display:block;width:100%;margin-top:.3rem;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius);padding:.6rem .85rem;font-size:.95rem;font-family:inherit;">
+        </label>
+        <button type="submit" class="btn-primary" style="align-self:flex-start;">Changer le mot de passe</button>
+      </form>
+    </div>
+
+    <!-- Exporter les données -->
+    <div class="terms-box">
+      <h3>Exporter mes données</h3>
+      <p style="color:var(--text-soft);line-height:1.6;margin-bottom:.75rem;">Télécharge une copie de toutes tes données (compte, points Wi-Fi ajoutés, votes, commentaires).</p>
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+        <a href="/account/export/json" class="btn-secondary">⬇️ Télécharger en JSON</a>
+        <a href="/account/export/csv" class="btn-secondary">⬇️ Télécharger en CSV</a>
+      </div>
+    </div>
+
+    <!-- Supprimer le compte -->
+    <div class="terms-box" style="border-color:rgba(192,90,74,.3);">
+      <h3 style="color:var(--red);">Supprimer mon compte</h3>
+      <p style="color:var(--text-soft);line-height:1.6;margin-bottom:.75rem;">
+        Ton compte sera anonymisé : ton pseudo et email seront effacés, tes contributions resteront mais attribuées à "Utilisateur supprimé".
+        <strong style="color:var(--text)">Cette action est irréversible.</strong>
+      </p>
+      <form method="POST" action="/account/delete" onsubmit="return confirm('Es-tu sûr ? Cette action est irréversible.')">
+        <label style="font-size:.8rem;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:.5px;">
+          Confirme avec ton mot de passe
+          <input type="password" name="password" required placeholder="••••••••" style="display:block;width:100%;margin-top:.3rem;background:var(--surface2);border:1px solid rgba(192,90,74,.4);color:var(--text);border-radius:var(--radius);padding:.6rem .85rem;font-size:.95rem;font-family:inherit;">
+        </label>
+        <button type="submit" class="btn-red" style="margin-top:.75rem;">Supprimer mon compte</button>
+      </form>
+    </div>
+
+  </div>
+</div>
+<%- include('partials/footer') %>
