@@ -42,7 +42,7 @@
       <div class="ssid-label" style="margin-bottom:.75rem">
         <span style="font-size:.8rem;color:var(--text-muted)">Localisation *</span>
         <div id="add-loc-status" style="margin-top:.4rem;font-size:.82rem;color:var(--text-muted)">Non définie</div>
-        <button type="button" onclick="getAddLocation()" class="btn-secondary" style="margin-top:.5rem;width:100%">📍 Utiliser ma position</button>
+        <button type="button" id="add-location-btn" class="btn-secondary" style="margin-top:.5rem;width:100%">📍 Utiliser ma position</button>
       </div>
       <% } else { %>
       <div style="font-size:.82rem;color:var(--green);margin-bottom:.75rem">📍 Position définie depuis la carte</div>
@@ -95,8 +95,8 @@
 
   <% if (user) { %>
   <div class="action-bar">
-    <button class="btn-green" onclick="doVerify('works')">✅ Fonctionne</button>
-    <button class="btn-red" onclick="doVerify('broken')">❌ Ne fonctionne plus</button>
+    <button type="button" class="btn-green verify-btn" data-status="works">✅ Fonctionne</button>
+    <button type="button" class="btn-red verify-btn" data-status="broken">❌ Ne fonctionne plus</button>
   </div>
 
   <!-- Section édition -->

@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .setContent(`
           <div style="display:flex;flex-direction:column;gap:.5rem;min-width:160px">
             <a href="/wifi/add?lat=${lat}&lng=${lng}" class="btn-primary" style="justify-content:center">➕ Créer un réseau</a>
-            <button onclick="navigator.clipboard.writeText('${lat.toFixed(6)}, ${lng.toFixed(6)}').then(() => this.textContent = '✅ Copié !')" class="btn-secondary" style="justify-content:center">📋 Copier les coordonnées</button>
+            <button type="button" data-copy-coords="${lat.toFixed(6)}, ${lng.toFixed(6)}" class="btn-secondary copy-coords-btn" style="justify-content:center">📋 Copier les coordonnées</button>
           </div>
         `)
         .openOn(map);
@@ -113,19 +113,38 @@ document.addEventListener('DOMContentLoaded', () => {
     // Coordonnées directes
     const coords = q.match(/^(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)$/);
     if (coords) {
-      searchResults.innerHTML = `<div class="search-result" onclick="goTo(${coords[1]},${coords[2]})">📍 ${coords[1]}, ${coords[2]}</div>`;
+      searchResults.innerHTML = `<div class="search-result" data-lat="${coords[1]}" data-lng="${coords[2]}">📍 ${coords[1]}, ${coords[2]}</div>`;
       return;
     }
     searchTimeout = setTimeout(async () => {
       const r = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=5`);
       const data = await r.json();
       searchResults.innerHTML = data.map(d =>
-        `<div class="search-result" onclick="goTo(${d.lat},${d.lon})">${d.display_name}</div>`
+        `<div class="search-result" data-lat="${d.lat}" data-lng="${d.lon}">${d.display_name}</div>`
       ).join('') || '<div class="search-result-empty">Aucun résultat</div>';
     }, 400);
   });
 
   document.addEventListener('click', e => {
+    const copyButton = e.target.closest('[data-copy-coords]');
+    if (copyButton) {
+      const coords = copyButton.dataset.copyCoords;
+      navigator.clipboard.writeText(coords).then(() => {
+        copyButton.textContent = '✅ Copié !';
+      });
+      return;
+    }
+
+    const searchResult = e.target.closest('.search-result');
+    if (searchResult && searchResults.contains(searchResult)) {
+      const lat = parseFloat(searchResult.dataset.lat);
+      const lng = parseFloat(searchResult.dataset.lng);
+      if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+        goTo(lat, lng);
+      }
+      return;
+    }
+
     if (!e.target.closest('#search-bar')) {
       searchResults.innerHTML = '';
       document.getElementById('search-bar').classList.remove('open');

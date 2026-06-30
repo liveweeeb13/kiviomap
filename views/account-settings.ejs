@@ -82,7 +82,7 @@
         Ton compte sera anonymisé : ton pseudo et email seront effacés, tes contributions resteront mais attribuées à "Utilisateur supprimé".
         <strong style="color:var(--text)">Cette action est irréversible.</strong>
       </p>
-      <form method="POST" action="/account/delete" onsubmit="return confirm('Es-tu sûr ? Cette action est irréversible.')">
+      <form method="POST" action="/account/delete" id="delete-account-form">
         <label style="font-size:.8rem;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:.5px;">
           Confirme avec ton mot de passe
           <input type="password" name="password" required placeholder="••••••••" style="display:block;width:100%;margin-top:.3rem;background:var(--surface2);border:1px solid rgba(192,90,74,.4);color:var(--text);border-radius:var(--radius);padding:.6rem .85rem;font-size:.95rem;font-family:inherit;">
