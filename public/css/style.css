@@ -97,13 +97,6 @@ body {
   margin-left: .25rem;
 }
 
-.user-badge.star { color: var(--yellow); border-color: rgba(245,158,11,.3); background: rgba(245,158,11,.08); }
-.user-badge.nitro {
-  background: linear-gradient(135deg, rgba(139,92,246,.15), rgba(236,72,153,.15));
-  border-color: rgba(139,92,246,.4);
-  color: #c4b5fd;
-}
-
 /* ── BUTTONS ────────────────────────────────────────── */
 .btn-primary, a.btn-primary {
   background: var(--primary);

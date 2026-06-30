@@ -20,8 +20,8 @@
     <a href="/leaderboard">Classement</a>
     <% if (user) { %>
       <% if (user.role === 'admin') { %><a href="/admin" class="btn-primary">Admin</a><% } %>
-      <a href="/account" class="user-badge <%= user.level >= 90 ? 'nitro' : user.level >= 10 ? 'star' : '' %>" style="text-decoration:none;cursor:pointer;">
-        <%= user.level >= 10 && user.level < 90 ? '⭐ ' : '' %><%= user.username %>
+      <a href="/account" class="user-badge" style="text-decoration:none;cursor:pointer;">
+        <%= user.username %>
         <small><%= user.points %> pts</small>
       </a>
     <% } else { %>
