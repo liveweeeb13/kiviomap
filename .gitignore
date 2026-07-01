@@ -9,3 +9,4 @@ prod/
 
 .env
 
+public/sw.js
