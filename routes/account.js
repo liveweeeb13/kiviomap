@@ -29,8 +29,9 @@ router.post('/settings/username', authRequired, async (req, res) => {
   if (existing)
     return res.render('account-settings', { error: 'Ce pseudo est déjà pris.', success: null });
   db.prepare('UPDATE users SET username = ?, session_version = session_version + 1 WHERE id = ?').run(username, user.id);
+  const updated = db.prepare('SELECT session_version FROM users WHERE id = ?').get(user.id);
   req.session.user.username = username;
-  req.session.user.session_version = user.session_version + 1;
+  req.session.user.session_version = updated.session_version;
   res.render('account-settings', { success: 'Pseudo mis à jour.', error: null });
 });
 
@@ -57,7 +58,8 @@ router.post('/settings/password', authRequired, async (req, res) => {
     return res.render('account-settings', { error: 'Mot de passe trop court (min. 6 caractères).', success: null });
   const hash = await bcrypt.hash(new_password, 10);
   db.prepare('UPDATE users SET password = ?, session_version = session_version + 1 WHERE id = ?').run(hash, user.id);
-  req.session.user.session_version = user.session_version + 1;
+  const updated = db.prepare('SELECT session_version FROM users WHERE id = ?').get(user.id);
+  req.session.user.session_version = updated.session_version;
   res.render('account-settings', { success: 'Mot de passe mis à jour.', error: null });
 });
 
