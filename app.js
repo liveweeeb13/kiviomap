@@ -8,18 +8,7 @@ const path = require('path');
 
 const app = express();
 
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "unpkg.com", "cdn.jsdelivr.net"],
-      styleSrc: ["'self'", "'unsafe-inline'", "unpkg.com", "cdn.jsdelivr.net", "fonts.googleapis.com"],
-      fontSrc: ["'self'", "fonts.gstatic.com", "cdn.jsdelivr.net"],
-      imgSrc: ["'self'", "data:", "*.tile.openstreetmap.org", "unpkg.com"],
-      connectSrc: ["'self'", "https://unpkg.com", "https://cdn.jsdelivr.net", "https://nominatim.openstreetmap.org"],
-    },
-  },
-}));
+app.use(helmet({ contentSecurityPolicy: false }));
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
