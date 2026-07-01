@@ -8,5 +8,38 @@
   <div id="map"></div>
 </div>
 
+<!-- Sidebar wifi détail (PC uniquement) -->
+<div id="wifi-modal" class="wifi-modal hidden">
+  <div class="wifi-modal-box">
+    <div class="wifi-modal-header">
+      <span id="wifi-modal-title" style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Chargement…</span>
+      <button id="wifi-modal-close-btn" class="wifi-modal-close">✕</button>
+    </div>
+    <div id="wifi-modal-body" class="wifi-modal-body"></div>
+  </div>
+</div>
+
 <script src="/js/map.js"></script>
-<%- include('partials/footer') %>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.back-link').forEach(link => {
+        link.addEventListener('click', e => {
+          e.preventDefault();
+          history.back();
+        });
+      });
+
+      const deleteForm = document.getElementById('delete-account-form');
+      if (deleteForm) {
+        deleteForm.addEventListener('submit', e => {
+          if (!confirm('Es-tu sûr ? Cette action est irréversible.')) {
+            e.preventDefault();
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>

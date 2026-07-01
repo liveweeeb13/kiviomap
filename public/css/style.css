@@ -299,14 +299,13 @@ body {
 }
 
 .history-change {
-  display: grid;
-  grid-template-columns: 150px 1fr 1fr;
-  gap: .45rem;
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
   padding: .45rem .55rem;
   border-radius: 6px;
   background: rgba(0,0,0,.16);
   font-size: .9rem;
-  align-items: center;
 }
 
 .history-field-name {
@@ -1324,6 +1323,83 @@ code {
 .legal-link:hover {
   color: #e8924f;
   border-bottom-color: #e8924f;
+}
+
+/* ── WIFI SIDEBAR ───────────────────────────────────── */
+.wifi-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 380px;
+  height: 100vh;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(-100%);
+  transition: transform .28s cubic-bezier(.4,0,.2,1);
+  pointer-events: none;
+}
+.wifi-modal:not(.hidden) {
+  transform: translateX(0);
+  pointer-events: auto;
+}
+.wifi-modal.hidden {
+  transform: translateX(-100%);
+  pointer-events: none;
+  display: flex;
+}
+
+.wifi-modal-box {
+  background: var(--bg2);
+  border-right: 1px solid var(--border2);
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 4px 0 32px rgba(0,0,0,.5);
+}
+
+.wifi-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  font-size: .95rem;
+  flex-shrink: 0;
+  gap: .75rem;
+  background: var(--surface);
+}
+
+.wifi-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: color .15s;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.wifi-modal-close:hover { color: var(--text); }
+
+.wifi-modal-body {
+  padding: 1.25rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.wifi-modal-score {
+  margin-bottom: 1rem;
+  font-size: .9rem;
+}
+
+.wifi-modal-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: .75rem;
+  margin-bottom: .75rem;
 }
 
 /* ── SCROLLBAR ──────────────────────────────────────── */

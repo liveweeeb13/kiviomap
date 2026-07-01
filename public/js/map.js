@@ -28,7 +28,13 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('mapView', JSON.stringify({ lat: c.lat, lng: c.lng, zoom: z }));
   });
 
-  loadWifi();
+  // Si l'URL est /wifi/:id (ex: après actualisation), ouvrir le modal sur PC
+  const wifiMatch = location.pathname.match(/^\/wifi\/(\d+)$/);
+  if (wifiMatch && window.innerWidth >= 768) {
+    loadWifi().then(() => openWifiModal(wifiMatch[1]));
+  } else {
+    loadWifi();
+  }
 
   setTimeout(() => {
     const zoom = document.querySelector('.leaflet-control-zoom');
@@ -99,6 +105,8 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => { s.classList.remove('snackbar-show'); setTimeout(() => s.remove(), 300); }, 4000);
   });
 
+  document.getElementById('wifi-modal-close-btn').addEventListener('click', closeWifiModal);
+
   document.querySelectorAll('.modal').forEach(m => {
     m.addEventListener('click', e => { if (e.target === m) m.classList.add('hidden'); });
   });
@@ -127,6 +135,15 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.addEventListener('click', e => {
+    // Modal wifi sur PC
+    const detailLink = e.target.closest('.wifi-detail-link');
+    if (detailLink && window.innerWidth >= 768) {
+      e.preventDefault();
+      const id = detailLink.dataset.id;
+      openWifiModal(id);
+      return;
+    }
+
     const copyButton = e.target.closest('[data-copy-coords]');
     if (copyButton) {
       const coords = copyButton.dataset.copyCoords;
@@ -192,7 +209,7 @@ window.loadWifi = async function () {
           <div>🔒 ${p.encryption.toUpperCase()}</div>
           ${p.place_type ? `<div>🏢 ${p.place_type}</div>` : ''}
           ${p.isp ? `<div>🌍 ${p.isp}</div>` : ''}
-          <a href="/wifi/${p.id}" class="btn-primary" style="margin-top:.5rem;display:inline-block">Voir les détails</a>
+          <a href="/wifi/${p.id}" class="btn-primary wifi-detail-link" data-id="${p.id}" style="margin-top:.5rem;display:inline-block">Voir les détails</a>
         </div>
       `);
     }
@@ -219,3 +236,253 @@ window.goTo = function(lat, lng) {
 window.closeModal = function (id) {
   document.getElementById(id).classList.add('hidden');
 };
+
+function paginateList(containerId, paginationId, perPage) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const items = Array.from(container.children);
+  if (items.length <= perPage) return;
+  let page = 0;
+  const pages = Math.ceil(items.length / perPage);
+  function render() {
+    items.forEach((el, i) => el.style.display = (i >= page * perPage && i < (page + 1) * perPage) ? '' : 'none');
+    const nav = document.getElementById(paginationId);
+    nav.innerHTML = '';
+    for (let i = 0; i < pages; i++) {
+      const btn = document.createElement('button');
+      btn.textContent = i + 1;
+      btn.className = 'pagination-btn' + (i === page ? ' active' : '');
+      btn.onclick = () => { page = i; render(); };
+      nav.appendChild(btn);
+    }
+  }
+  render();
+}
+
+function buildDiffRows(snapshot) {
+  if (!snapshot?.before || !snapshot?.after) return [];
+  const fields = ['ssid','password','encryption','captive_portal','gateway','dhcp_range','isp','place_type','hours','download_mbps','upload_mbps','ping_ms'];
+  return fields.map(field => {
+    const norm = v => (v === '1' || v === 1 || v === true) ? true : (!v && v !== 0) ? null : v;
+    const fmt = v => v === null ? '•' : v === true ? 'Oui' : v === false ? 'Non' : String(v);
+    const oldVal = norm(snapshot.before[field]);
+    const newVal = norm(snapshot.after[field]);
+    const oldText = fmt(oldVal);
+    const newText = fmt(newVal);
+    if (oldText === newText) return null;
+    const kind = oldVal === null ? 'added' : newVal === null ? 'removed' : 'changed';
+    return { field, oldText, newText, kind };
+  }).filter(Boolean);
+}
+
+function renderHistoryEntry(entry) {
+  let snap = null;
+  try { snap = entry.snapshot ? JSON.parse(entry.snapshot) : null; } catch {}
+  const diffs = buildDiffRows(snap);
+  const kind = entry.action.includes('✅') ? 'success'
+    : entry.action.includes('❌') || entry.action.includes('Ne fonctionne') ? 'danger'
+    : entry.action.includes('📶') ? 'info' : 'neutral';
+  const diffsHtml = diffs.length ? `<div class="history-diff">${diffs.map(d =>
+    `<div class="history-change ${d.kind}">
+      <span class="history-field-name">${d.field}</span>
+      <div style="display:flex;flex-direction:column;gap:.2rem;margin-top:.2rem">
+        <span class="history-old">${d.oldText}</span>
+        <span class="history-new">${d.newText}</span>
+      </div>
+    </div>`
+  ).join('')}</div>` : '';
+  return `<li class="history-entry history-entry--${kind}">
+    <div class="history-bullet"></div>
+    <div class="history-main">
+      <div class="history-header">
+        <div class="history-meta"><strong>${entry.username}</strong><span class="history-action">${entry.action}</span></div>
+        <small>${new Date(entry.created_at).toLocaleDateString('fr-FR')}</small>
+      </div>
+      ${diffsHtml}
+    </div>
+  </li>`;
+}
+
+window.openWifiModal = async function(id) {
+  const modal = document.getElementById('wifi-modal');
+  const body = document.getElementById('wifi-modal-body');
+  const title = document.getElementById('wifi-modal-title');
+  modal.classList.remove('hidden');
+  body.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--text-muted)">Chargement…</div>';
+  history.pushState({ wifiModal: id }, '', `/wifi/${id}`);
+  try {
+    const r = await fetch(`/wifi/${id}/json`);
+    const data = await r.json();
+    const { wifi, stats, comments } = data;
+    const hist = data.history;
+    title.textContent = `📶 ${wifi.ssid}`;
+    const scoreColor = wifi.confidence_score >= 80 ? '#2ecc71' : wifi.confidence_score >= 60 ? '#f1c40f' : wifi.confidence_score >= 35 ? '#e67e22' : '#e74c3c';
+
+    const infoCard = `<div class="detail-card">
+      <h3>Réseau</h3>
+      <p>Chiffrement : <strong>${wifi.encryption.toUpperCase()}</strong></p>
+      ${wifi.password ? `<p>Mot de passe : <code class="pwd-reveal">${wifi.password}</code></p>` : ''}
+      <p>Captive portal : <strong>${wifi.captive_portal ? 'Oui' : 'Non'}</strong></p>
+      ${wifi.gateway ? `<p>Passerelle : <code>${wifi.gateway}</code></p>` : ''}
+      ${wifi.dhcp_range ? `<p>DHCP : <code>${wifi.dhcp_range}</code></p>` : ''}
+      ${wifi.isp ? `<p>FAI : <strong>${wifi.isp}</strong></p>` : ''}
+      ${wifi.place_type ? `<p>Lieu : <strong>${wifi.place_type}</strong></p>` : ''}
+      ${wifi.hours ? `<p>Horaires : <strong>${wifi.hours}</strong></p>` : ''}
+      ${wifi.author_name ? `<p>Ajouté par : <strong>${wifi.author_name}</strong></p>` : ''}
+      ${wifi.last_verified ? `<p style="color:var(--text-muted);font-size:.8rem">Vérifié le ${new Date(wifi.last_verified).toLocaleDateString('fr-FR')}</p>` : ''}
+    </div>`;
+
+    const perfCard = `<div class="detail-card" style="margin-top:.75rem">
+      <h3>Performances</h3>
+      ${stats.avg_download ? `<p>Descendant : <strong>${stats.avg_download} Mbps</strong></p>` : ''}
+      ${stats.avg_upload ? `<p>Montant : <strong>${stats.avg_upload} Mbps</strong></p>` : ''}
+      ${stats.avg_ping ? `<p>Ping : <strong>${stats.avg_ping} ms</strong></p>` : ''}
+      <p>Confirmations : <strong style="color:var(--green)">${stats.works}</strong> &nbsp; Signalements : <strong style="color:var(--red)">${stats.broken}</strong></p>
+    </div>`;
+
+    const commentsHtml = comments.length ? `<div class="detail-card" style="margin-top:.75rem">
+      <h3>Commentaires</h3>
+      ${comments.map(c => `<div class="comment"><strong>${c.username}</strong><small style="margin-left:.5rem">${new Date(c.created_at).toLocaleDateString('fr-FR')}</small><p>${c.content}</p></div>`).join('')}
+    </div>` : '';
+
+    const historyHtml = hist && hist.length ? `<div class="detail-card" style="margin-top:.75rem">
+      <h3>Historique</h3>
+      <ul class="history-list" id="sidebar-history-list">${hist.map(renderHistoryEntry).join('')}</ul>
+      <div id="sidebar-history-pagination" class="pagination"></div>
+    </div>` : '';
+
+    body.innerHTML = `
+      <div style="margin-bottom:1rem">
+        <div style="color:${scoreColor};font-size:.9rem">Score de confiance : <strong>${wifi.confidence_score}%</strong></div>
+        <div class="progress-bar" style="margin-top:.4rem"><div class="progress-fill" style="width:${wifi.confidence_score}%;background:${scoreColor}"></div></div>
+      </div>
+      ${IS_LOGGED ? `<div style="display:flex;gap:.5rem;margin-bottom:.75rem">
+        <button class="btn-green verify-sidebar-btn" data-id="${wifi.id}" data-status="works" style="flex:1">Fonctionne</button>
+        <button class="btn-red verify-sidebar-btn" data-id="${wifi.id}" data-status="broken" style="flex:1">Ne fonctionne plus</button>
+        <button class="btn-secondary sidebar-edit-btn" style="flex-shrink:0">✏️</button>
+      </div>` : ''}
+      ${infoCard}${perfCard}${commentsHtml}${historyHtml}`;
+
+    if (hist && hist.length) paginateList('sidebar-history-list', 'sidebar-history-pagination', 5);
+
+    body.querySelectorAll('.verify-sidebar-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const r = await fetch(`/wifi/${btn.dataset.id}/verify`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ status: btn.dataset.status }) });
+        const json = await r.json();
+        if (r.status === 429) return showSnackbar(`Cooldown actif, réessaye dans ${json.remaining}h`);
+        if (r.ok) openWifiModal(btn.dataset.id);
+      });
+    });
+
+    const editBtn = body.querySelector('.sidebar-edit-btn');
+    if (editBtn) editBtn.addEventListener('click', () => openEditForm(wifi.id));
+  } catch(e) {
+    body.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--red)">Erreur de chargement</div>';
+  }
+};
+
+function showSnackbar(msg) {
+  const s = document.createElement('div');
+  s.className = 'snackbar';
+  s.textContent = msg;
+  document.body.appendChild(s);
+  setTimeout(() => s.classList.add('snackbar-show'), 10);
+  setTimeout(() => { s.classList.remove('snackbar-show'); setTimeout(() => s.remove(), 300); }, 3000);
+}
+
+window.openEditForm = async function(id) {
+  const body = document.getElementById('wifi-modal-body');
+  const title = document.getElementById('wifi-modal-title');
+  body.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--text-muted)">Chargement…</div>';
+  const r = await fetch(`/wifi/${id}/json`);
+  const { wifi } = await r.json();
+  title.textContent = '✏️ Modifier';
+  body.innerHTML = `
+    <button class="btn-secondary sidebar-back-btn" style="margin-bottom:1rem">← Retour</button>
+    <form id="sidebar-edit-form" class="detail-card">
+      <h3>Modifier le réseau</h3>
+      <label class="ssid-label">SSID<span class="ssid-help"><a href="/faq/ssid" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span> *<input type="text" name="ssid" value="${wifi.ssid}" required></label>
+      <label class="ssid-label">Chiffrement<span class="ssid-help"><a href="/faq/security" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span> *
+        <select name="encryption" id="sidebar-enc">
+          <option value="open" ${wifi.encryption==='open'?'selected':''}>Ouvert</option>
+          <option value="wpa2" ${wifi.encryption==='wpa2'?'selected':''}>WPA2</option>
+          <option value="wpa3" ${wifi.encryption==='wpa3'?'selected':''}>WPA3</option>
+          <option value="wep" ${wifi.encryption==='wep'?'selected':''}>WEP</option>
+        </select>
+      </label>
+      <label class="ssid-label" id="sidebar-pwd-field">Mot de passe<span class="ssid-help"><a href="/faq/password" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span><input type="text" name="password" value="${wifi.password || ''}"></label>
+      <label class="ssid-label">Captive portal<span class="ssid-help"><a href="/faq/captiveportal" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span>
+        <select name="captive_portal">
+          <option value="">•</option>
+          <option value="1" ${wifi.captive_portal?'selected':''}>Oui</option>
+          <option value="0" ${!wifi.captive_portal?'selected':''}>Non</option>
+        </select>
+      </label>
+      <label class="ssid-label">FAI<span class="ssid-help"><a href="/faq/isp" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span>
+        <select name="isp">
+          <option value="">•</option>
+          ${['Orange','Free','SFR','Bouygues','Autre'].map(v => `<option ${wifi.isp===v?'selected':''}>${v}</option>`).join('')}
+        </select>
+      </label>
+      <label class="ssid-label">Lieu<span class="ssid-help"><a href="/faq/location" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span>
+        <select name="place_type">
+          <option value="">•</option>
+          ${['Restaurant','Café','Bibliothèque','Hôtel','Gare','Aéroport','Autre'].map(v => `<option ${wifi.place_type===v?'selected':''}>${v}</option>`).join('')}
+        </select>
+      </label>
+      <label class="ssid-label">Horaires<span class="ssid-help"><a href="/faq/hours" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span><input type="text" name="hours" value="${wifi.hours || ''}" placeholder="Mo-Fr 08:00-20:00"></label>
+      <label class="ssid-label">Passerelle<span class="ssid-help"><a href="/faq/gateway" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span><input type="text" name="gateway" value="${wifi.gateway || ''}"></label>
+      <label class="ssid-label">DHCP<span class="ssid-help"><a href="/faq/dhcp" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span><input type="text" name="dhcp_range" value="${wifi.dhcp_range || ''}"></label>
+      <label class="ssid-label">Débit ↓ (Mbps)<span class="ssid-help"><a href="/faq/speedtest" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span><input type="number" name="download_mbps" min="0" step="0.1" value="${wifi.download_mbps || ''}"></label>
+      <label class="ssid-label">Débit ↑ (Mbps)<span class="ssid-help"><a href="/faq/speedtest" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span><input type="number" name="upload_mbps" min="0" step="0.1" value="${wifi.upload_mbps || ''}"></label>
+      <label class="ssid-label">Ping (ms)<span class="ssid-help"><a href="/faq/speedtest" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span><input type="number" name="ping_ms" min="0" value="${wifi.ping_ms || ''}"></label>
+      <label class="ssid-label">Latitude<span class="ssid-help"><a href="/faq/coordinates" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span><input type="number" name="lat" step="any" value="${wifi.lat}"></label>
+      <label class="ssid-label">Longitude<span class="ssid-help"><a href="/faq/coordinates" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span><input type="number" name="lng" step="any" value="${wifi.lng}"></label>
+      <button type="submit" class="btn-primary" style="width:100%;justify-content:center;margin-top:.5rem">Sauvegarder</button>
+    </form>`;
+
+  const enc = document.getElementById('sidebar-enc');
+  const pwdField = document.getElementById('sidebar-pwd-field');
+
+  body.querySelector('.sidebar-back-btn').addEventListener('click', () => openWifiModal(id));
+
+  function togglePwd() {
+    const open = enc.value === 'open';
+    pwdField.style.display = open ? 'none' : '';
+    pwdField.querySelector('input').disabled = open;
+  }
+  enc.addEventListener('change', togglePwd);
+  togglePwd();
+
+  document.getElementById('sidebar-edit-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target));
+    try {
+      const res = await fetch(`/wifi/${id}/edit`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+      const json = await res.json();
+      if (res.ok) {
+        showSnackbar('Modifications sauvegardées !');
+        openWifiModal(id);
+      } else {
+        showSnackbar(json.error || 'Erreur lors de la sauvegarde');
+      }
+    } catch(err) {
+      showSnackbar('Erreur réseau');
+    }
+  });
+};
+
+window.closeWifiModal = function() {
+  document.getElementById('wifi-modal').classList.add('hidden');
+  history.pushState(null, '', '/');
+};
+
+window.addEventListener('popstate', e => {
+  if (!e.state?.wifiModal) {
+    document.getElementById('wifi-modal')?.classList.add('hidden');
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeWifiModal();
+});
