@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const axios = require('axios');
 const session = require('express-session');
 const SQLiteStore = require('connect-sqlite3')(session);
+const rateLimit = require('express-rate-limit');
 const path = require('path');
 
 const app = express();
@@ -18,13 +19,17 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// amazonq-ignore-next-line
 app.use(session({
   store: new SQLiteStore({ db: 'sessions.db' }),
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 }
+  cookie: {
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax'
+  }
 }));
 
 app.use((req, res, next) => {
@@ -47,16 +52,11 @@ app.use(async (req, res, next) => {
   next();
 });
 
-app.use((req, res, next) => {
-  if (req.session.user) {
-    const db = require('./db');
-    const u = db.prepare('SELECT banned, session_version FROM users WHERE id = ?').get(req.session.user.id);
-    if (!u || u.banned || u.session_version !== req.session.user.session_version) {
-      return req.session.destroy(() => res.redirect('/auth/login'));
-    }
-  }
-  next();
-});
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false });
+app.use('/auth/login', authLimiter);
+app.use('/auth/register', authLimiter);
+app.use('/auth/forgot', authLimiter);
+app.use('/auth/resend-code', authLimiter);
 
 async function sendBrevoEmail({ to, subject, html }) {
   await axios.post(
