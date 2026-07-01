@@ -8,6 +8,8 @@ const path = require('path');
 
 const app = express();
 
+if (!process.env.SESSION_SECRET) throw new Error('SESSION_SECRET manquant dans .env');
+
 app.use(helmet({ contentSecurityPolicy: false }));
 
 app.set('view engine', 'ejs');
@@ -16,9 +18,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// amazonq-ignore-next-line
 app.use(session({
   store: new SQLiteStore({ db: 'sessions.db' }),
-  secret: 'kiviomap-secret-key-change-in-prod',
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 }

@@ -7,6 +7,7 @@ https://kiviomap.liveweeeb.dpdns.org
 BREVO_API_KEY=
 FROM_EMAIL=
 APP_URL=
+SESSION_SECRET=
 ```
 
 npm install
