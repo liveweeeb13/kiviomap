@@ -102,15 +102,16 @@ router.post('/register', async (req, res) => {
     return res.render('register', { error: 'Erreur lors de l\'envoi du mail, réessaie.' });
   }
 
+  db.prepare('UPDATE email_verifications SET last_sent_at = ? WHERE email = ?').run(new Date().toISOString(), email);
   req.session.pendingEmail = email;
-  req.session.lastCodeSentAt = Date.now();
   res.redirect('/auth/verify-email');
 });
 
 router.get('/verify-email', (req, res) => {
   if (req.session.user) return res.redirect('/');
   if (!req.session.pendingEmail) return res.redirect('/auth/register');
-  const elapsed = Date.now() - (req.session.lastCodeSentAt || 0);
+  const pending = db.prepare('SELECT last_sent_at FROM email_verifications WHERE email = ?').get(req.session.pendingEmail);
+  const elapsed = pending?.last_sent_at ? Date.now() - new Date(pending.last_sent_at).getTime() : Infinity;
   const resendCooldown = elapsed < 60000 ? Math.ceil((60000 - elapsed) / 1000) : 0;
   res.render('verify-pending', { email: req.session.pendingEmail, error: null, resent: false, resendCooldown });
 });
@@ -122,7 +123,7 @@ router.post('/verify-email', async (req, res) => {
 
   const { code } = req.body;
   const pending = db.prepare('SELECT * FROM email_verifications WHERE email = ?').get(email);
-  const elapsed = Date.now() - (req.session.lastCodeSentAt || 0);
+  const elapsed = pending?.last_sent_at ? Date.now() - new Date(pending.last_sent_at).getTime() : Infinity;
   const resendCooldown = elapsed < 60000 ? Math.ceil((60000 - elapsed) / 1000) : 0;
 
   if (!pending) {
@@ -140,7 +141,6 @@ router.post('/verify-email', async (req, res) => {
   const result = db.prepare('INSERT INTO users (username, email, password, email_verified) VALUES (?, ?, ?, 1)').run(pending.username, email, pending.password);
   db.prepare('DELETE FROM email_verifications WHERE email = ?').run(email);
   req.session.pendingEmail = null;
-  req.session.lastCodeSentAt = null;
   req.session.user = { id: result.lastInsertRowid, username: pending.username, points: 0, level: 1, role: 'member', session_version: 0 };
   res.redirect('/');
 });
@@ -153,8 +153,8 @@ router.post('/resend-code', async (req, res) => {
   const pending = db.prepare('SELECT * FROM email_verifications WHERE email = ?').get(email);
   if (!pending) return res.redirect('/auth/register');
 
-  const lastSent = req.session.lastCodeSentAt || 0;
-  const elapsed = Date.now() - lastSent;
+  const lastSentAt = pending.last_sent_at ? new Date(pending.last_sent_at).getTime() : 0;
+  const elapsed = Date.now() - lastSentAt;
   if (elapsed < 60000) {
     const wait = Math.ceil((60000 - elapsed) / 1000);
     return res.render('verify-pending', { email, error: null, resent: false, resendCooldown: wait });
@@ -162,8 +162,7 @@ router.post('/resend-code', async (req, res) => {
 
   const code = String(Math.floor(100000 + Math.random() * 900000));
   const expires = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-  db.prepare('UPDATE email_verifications SET code = ?, expires_at = ? WHERE email = ?').run(code, expires, email);
-  req.session.lastCodeSentAt = Date.now();
+  db.prepare('UPDATE email_verifications SET code = ?, expires_at = ?, last_sent_at = ? WHERE email = ?').run(code, expires, new Date().toISOString(), email);
 
   try {
     await sendBrevoEmail({

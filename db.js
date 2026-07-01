@@ -86,8 +86,6 @@ db.exec(`
 
 module.exports = db;
 
-// Migrations
-try { db.exec(`ALTER TABLE users ADD COLUMN banned INTEGER DEFAULT 0`); } catch (e) {}
 try { db.exec(`ALTER TABLE users ADD COLUMN session_version INTEGER DEFAULT 0`); } catch (e) {}
 try { db.exec(`ALTER TABLE users ADD COLUMN email_verified INTEGER DEFAULT 0`); } catch (e) {}
 
@@ -115,3 +113,5 @@ db.exec(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 `);
+
+try { db.exec(`ALTER TABLE email_verifications ADD COLUMN last_sent_at DATETIME`); } catch (e) {}
