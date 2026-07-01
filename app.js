@@ -100,7 +100,7 @@ app.post('/admin/user/:id/ban', adminAuth, async (req, res) => {
   const db = require('./db');
   const user = db.prepare('SELECT username, email FROM users WHERE id = ?').get(req.params.id);
   if (!user) return res.redirect('/admin');
-  db.prepare('UPDATE users SET banned = 1 WHERE id = ?').run(req.params.id);
+  db.prepare('UPDATE users SET banned = 1, session_version = session_version + 1 WHERE id = ?').run(req.params.id);
   try {
     await sendBrevoEmail({
       to: user.email,
@@ -140,7 +140,7 @@ app.post('/admin/user/:id/ban', adminAuth, async (req, res) => {
   } catch (e) {
     console.error('Erreur envoi mail ban:', e.response?.data || e.message);
   }
-  res.redirect('/admin');
+  res.redirect('/admin?success=1');
 });
 
 app.post('/admin/user/:id/unban', adminAuth, async (req, res) => {
@@ -181,7 +181,7 @@ app.post('/admin/user/:id/unban', adminAuth, async (req, res) => {
   } catch (e) {
     console.error('Erreur envoi mail unban:', e.response?.data || e.message);
   }
-  res.redirect('/admin');
+  res.redirect('/admin?success=1');
 });
 
 app.post('/admin/network/:id/delete', adminAuth, (req, res) => {
@@ -194,27 +194,15 @@ app.post('/admin/network/:id/delete', adminAuth, (req, res) => {
   res.redirect('/admin');
 });
 
-app.post('/admin/user/:id/ban', adminAuth, (req, res) => {
-  const db = require('./db');
-  db.prepare('UPDATE users SET banned = 1, session_version = session_version + 1 WHERE id = ?').run(req.params.id);
-  res.redirect('/admin?success=1');
-});
-
-app.post('/admin/user/:id/unban', adminAuth, (req, res) => {
-  const db = require('./db');
-  db.prepare('UPDATE users SET banned = 0 WHERE id = ?').run(req.params.id);
-  res.redirect('/admin?success=1');
-});
-
 app.post('/admin/user/:id', adminAuth, async (req, res) => {
   const db = require('./db');
   const bcrypt = require('bcrypt');
-  const { password, points, role } = req.body;
+  const { username, email, password, points, role } = req.body;
   if (password && password.trim()) {
     const hash = await bcrypt.hash(password, 10);
-    db.prepare('UPDATE users SET password=?, points=?, level=MIN(100, CAST(1 + SQRT(points / 10.0) AS INT)), role=?, session_version=session_version+1 WHERE id=?').run(hash, points, role, req.params.id);
+    db.prepare('UPDATE users SET username=?, email=?, password=?, points=?, level=MIN(100, CAST(1 + SQRT(points / 10.0) AS INT)), role=?, session_version=session_version+1 WHERE id=?').run(username, email, hash, points, role, req.params.id);
   } else {
-    db.prepare('UPDATE users SET points=?, level=MIN(100, CAST(1 + SQRT(points / 10.0) AS INT)), role=? WHERE id=?').run(points, role, req.params.id);
+    db.prepare('UPDATE users SET username=?, email=?, points=?, level=MIN(100, CAST(1 + SQRT(points / 10.0) AS INT)), role=? WHERE id=?').run(username, email, points, role, req.params.id);
   }
   if (req.session.user.id == req.params.id) {
     const updated = db.prepare('SELECT * FROM users WHERE id=?').get(req.params.id);
