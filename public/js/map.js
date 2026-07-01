@@ -206,7 +206,7 @@ window.loadWifi = async function () {
         <div class="popup-content">
           <strong>📶 ${p.ssid}</strong>
           <div style="color:${color};font-weight:bold">Score : ${p.confidence_score}%</div>
-          <div>🔒 ${p.encryption.toUpperCase()}</div>
+          <div>${p.encryption === 'open' ? '🔓' : '🔒'} ${fmtEncryption(p.encryption)}</div>
           ${p.place_type ? `<div>🏢 ${p.place_type}</div>` : ''}
           ${p.isp ? `<div>🌍 ${p.isp}</div>` : ''}
           <a href="/wifi/${p.id}" class="btn-primary wifi-detail-link" data-id="${p.id}" style="margin-top:.5rem;display:inline-block">Voir les détails</a>
@@ -218,6 +218,10 @@ window.loadWifi = async function () {
   window._wifiLayer = cluster;
   map.addLayer(cluster);
 };
+
+function fmtEncryption(enc) {
+  return enc === 'open' ? 'Ouvert' : enc.toUpperCase();
+}
 
 function getMarkerStyle(score) {
   if (score >= 80) return { color: '#2ecc71', emoji: 'ᯤ' };
@@ -320,7 +324,7 @@ window.openWifiModal = async function(id) {
 
     const infoCard = `<div class="detail-card">
       <h3>Réseau</h3>
-      <p>Chiffrement : <strong>${wifi.encryption.toUpperCase()}</strong></p>
+      <p>Chiffrement : <strong>${fmtEncryption(wifi.encryption)}</strong></p>
       ${wifi.password ? `<p>Mot de passe : <code class="pwd-reveal">${wifi.password}</code></p>` : ''}
       <p>Captive portal : <strong>${wifi.captive_portal ? 'Oui' : 'Non'}</strong></p>
       ${wifi.gateway ? `<p>Passerelle : <code>${wifi.gateway}</code></p>` : ''}
