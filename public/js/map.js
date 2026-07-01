@@ -77,8 +77,8 @@ document.addEventListener('DOMContentLoaded', () => {
         .setLatLng(e.latlng)
         .setContent(`
           <div style="display:flex;flex-direction:column;gap:.5rem;min-width:160px">
-            <a href="/wifi/add?lat=${lat}&lng=${lng}" class="btn-primary" style="justify-content:center">➕ Créer un réseau</a>
-            <button type="button" data-copy-coords="${lat.toFixed(6)}, ${lng.toFixed(6)}" class="btn-secondary copy-coords-btn" style="justify-content:center">📋 Copier les coordonnées</button>
+            <a href="/wifi/add?lat=${lat}&lng=${lng}" class="btn-primary" style="justify-content:center">Créer un réseau</a>
+            <button type="button" data-copy-coords="${lat.toFixed(6)}, ${lng.toFixed(6)}" class="btn-secondary copy-coords-btn" style="justify-content:center">Copier les coordonnées</button>
           </div>
         `)
         .openOn(map);

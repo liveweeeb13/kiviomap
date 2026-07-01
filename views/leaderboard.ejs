@@ -1,10 +1,10 @@
 <%- include('partials/header') %>
 <div class="leaderboard-page">
-  <h1>🏆 Classement</h1>
+  <h1>Classement</h1>
 
   <div class="lb-grid">
     <div class="detail-card">
-      <h3>🥇 Top contributeurs (points)</h3>
+      <h3>Top contributeurs</h3>
       <ol>
         <% topPoints.forEach((u, i) => { %>
         <li>
@@ -17,7 +17,7 @@
     </div>
 
     <div class="detail-card">
-      <h3>📡 Plus de réseaux ajoutés</h3>
+      <h3>Plus de réseaux ajoutés</h3>
       <ol>
         <% topNetworks.forEach((u, i) => { %>
         <li><span class="lb-rank"><%= i+1 %></span> <%= u.username %> <span class="lb-pts"><%= u.count %> réseaux</span></li>
