@@ -141,6 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       const id = detailLink.dataset.id;
       openWifiModal(id);
+      showVpnToast();
       return;
     }
 
@@ -384,6 +385,17 @@ window.openWifiModal = async function(id) {
     body.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--red)">Erreur de chargement</div>';
   }
 };
+
+function showVpnToast() {
+  if (document.getElementById('vpn-toast')) return;
+  const t = document.createElement('div');
+  t.id = 'vpn-toast';
+  t.style.cssText = 'position:fixed;top:4.5rem;left:50%;transform:translateX(-50%);background:var(--surface3);color:var(--text);border:1px solid var(--border2);border-radius:var(--radius);padding:.65rem 1.1rem;font-size:.82rem;z-index:3000;box-shadow:var(--shadow);display:flex;align-items:center;gap:.5rem;max-width:90vw;flex-wrap:wrap';
+  t.innerHTML = '🔒 Par sécurité, utilisez un <a href="https://protonvpn.com" target="_blank" rel="noopener noreferrer" style="color:var(--primary);text-decoration:none;font-weight:600">VPN</a>&nbsp;<button style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1rem;line-height:1;margin-left:.25rem" id="vpn-toast-close">✕</button>';
+  document.body.appendChild(t);
+  document.getElementById('vpn-toast-close').addEventListener('click', () => t.remove());
+  setTimeout(() => t.remove(), 8000);
+}
 
 function showSnackbar(msg) {
   const s = document.createElement('div');
