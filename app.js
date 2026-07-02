@@ -82,6 +82,61 @@ function adminAuth(req, res, next) {
   next();
 }
 
+app.get('/admin/mail', adminAuth, (req, res) => {
+  const db = require('./db');
+  const users = db.prepare('SELECT id, username, email FROM users WHERE banned = 0 ORDER BY username').all();
+  res.render('admin-mail', { users });
+});
+
+app.post('/admin/mail', adminAuth, async (req, res) => {
+  const db = require('./db');
+  const { recipients, subject, body } = req.body;
+  const recipientList = Array.isArray(recipients) ? recipients : [recipients];
+
+  let targets;
+  if (recipientList.includes('__all__')) {
+    targets = db.prepare('SELECT username, email FROM users WHERE banned = 0 AND email != \'\'').all();
+  } else {
+    const placeholders = recipientList.map(() => '?').join(',');
+    targets = db.prepare(`SELECT username, email FROM users WHERE id IN (${placeholders})`).all(...recipientList);
+  }
+
+  const html = `<!DOCTYPE html>
+  <html lang="fr">
+  <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+  <body style="margin:0;padding:0;background:#f4f4f4;font-family:'Segoe UI',Arial,sans-serif">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:40px 16px">
+      <tr><td align="center">
+        <table width="520" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
+          <tr><td style="padding:32px 40px 24px">
+            <p style="margin:0;font-size:22px;font-weight:700;color:#1a1a1a">Kiviomap</p>
+          </td></tr>
+          <tr><td style="padding:0 40px 32px">
+            ${body.split('\n').map(line => line.trim() ? `<p style="margin:0 0 16px;font-size:15px;color:#444;line-height:1.7">${line}</p>` : '<br>').join('')}
+            <hr style="border:none;border-top:1px solid #ebebeb;margin:24px 0">
+            <p style="margin:0;font-size:13px;color:#999">L'équipe Kiviomap</p>
+          </td></tr>
+        </table>
+      </td></tr>
+    </table>
+  </body>
+  </html>`;
+
+  let sent = 0;
+  try {
+    for (const target of targets) {
+      await sendBrevoEmail({ to: target.email, subject, html });
+      sent++;
+    }
+    const users = db.prepare('SELECT id, username, email FROM users WHERE banned = 0 ORDER BY username').all();
+    res.render('admin-mail', { users, sent });
+  } catch (e) {
+    console.error('Erreur envoi mail custom:', e.response?.data || e.message);
+    const users = db.prepare('SELECT id, username, email FROM users WHERE banned = 0 ORDER BY username').all();
+    res.render('admin-mail', { users, error: e.message });
+  }
+});
+
 app.get('/admin', adminAuth, (req, res) => {
   const db = require('./db');
   const users = db.prepare('SELECT id, username, email, points, level, role, banned FROM users ORDER BY id').all();

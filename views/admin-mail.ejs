@@ -1,0 +1,40 @@
+<%- include('partials/header') %>
+<div class="detail-page">
+  <div class="detail-header">
+    <h1>Envoyer un mail</h1>
+  </div>
+
+  <div class="detail-card">
+    <form method="POST" action="/admin/mail">
+      <label class="ssid-label">Destinataires
+        <select name="recipients" multiple style="height:160px;margin-top:.35rem">
+          <option value="__all__" style="font-weight:700">— Tous les utilisateurs —</option>
+          <% users.forEach(u => { %>
+          <option value="<%= u.id %>"><%= u.username %> (<%= u.email %>)</option>
+          <% }) %>
+        </select>
+        <small style="color:var(--text-muted);margin-top:.25rem;display:block">Ctrl+clic pour sélectionner plusieurs</small>
+      </label>
+
+      <label class="ssid-label" style="margin-top:.75rem">Sujet
+        <input type="text" name="subject" required placeholder="Objet du mail">
+      </label>
+
+      <label class="ssid-label" style="margin-top:.75rem">Message
+        <textarea name="body" rows="8" required placeholder="Écris ton message ici…" style="margin-top:.35rem;width:100%;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:var(--radius);padding:.5rem .75rem;font-family:inherit;font-size:.875rem;resize:vertical"></textarea>
+      </label>
+
+      <div style="margin-top:1rem;display:flex;gap:.75rem;align-items:center">
+        <button type="submit" class="btn-primary">Envoyer</button>
+        <a href="/admin" class="btn-secondary">Annuler</a>
+        <% if (typeof sent !== 'undefined') { %>
+        <span style="color:var(--green);font-size:.875rem">✅ <%= sent %> mail(s) envoyé(s)</span>
+        <% } %>
+        <% if (typeof error !== 'undefined') { %>
+        <span style="color:var(--red);font-size:.875rem">❌ <%= error %></span>
+        <% } %>
+      </div>
+    </form>
+  </div>
+</div>
+<%- include('partials/footer') %>
