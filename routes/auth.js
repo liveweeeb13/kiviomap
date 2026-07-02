@@ -34,11 +34,12 @@ router.post('/login', async (req, res) => {
   if (!user || !await bcrypt.compare(password, user.password)) {
     return res.render('login', { error: 'Email ou mot de passe incorrect.', success: null });
   }
-  if (user.banned) {
-    return res.render('login', { error: 'Ce compte a été banni.', success: null });
-  }
+  if (user.banned) return res.render('login', { error: 'Ce compte a été banni.', success: null });
   req.session.user = { id: user.id, username: user.username, points: user.points, level: user.level, role: user.role, session_version: user.session_version };
-  res.redirect('/');
+  req.session.save(err => {
+    if (err) console.error('[LOGIN] session save error:', err);
+    res.redirect('/');
+  });
 });
 
 router.get('/register', (req, res) => {

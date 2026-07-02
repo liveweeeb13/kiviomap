@@ -46,7 +46,9 @@ app.use(async (req, res, next) => {
     req.session.destroy(() => {});
     return res.redirect('/auth/login');
   }
-  if (user.session_version !== req.session.user.session_version) {
+  const dbVersion = user.session_version ?? 0;
+  const sessVersion = req.session.user.session_version ?? 0;
+  if (dbVersion !== sessVersion) {
     req.session.destroy(() => {});
     return res.redirect('/auth/login');
   }
