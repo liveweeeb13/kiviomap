@@ -8,6 +8,9 @@
         <p class="faq-intro">Modifie tes informations ou gère tes données.</p>
       </div>
       <a href="/account" class="faq-link">← Retour</a>
+      <form action="/auth/logout" method="POST">
+        <button type="submit" class="faq-link" style="background:none;border:1px solid rgba(255,255,255,.1);cursor:pointer;font-family:inherit;font-size:inherit;color:var(--text)">Déconnexion</button>
+      </form>
     </div>
 
     <% if (typeof success !== 'undefined' && success) { %><div class="alert-success" style="margin-bottom:1rem"><%= success %></div><% } %>
