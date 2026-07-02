@@ -8,6 +8,7 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 
 const app = express();
+app.set('trust proxy', 1);
 
 if (!process.env.SESSION_SECRET) throw new Error('SESSION_SECRET manquant dans .env');
 
