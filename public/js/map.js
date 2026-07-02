@@ -299,7 +299,7 @@ function renderHistoryEntry(entry) {
     <div class="history-bullet"></div>
     <div class="history-main">
       <div class="history-header">
-        <div class="history-meta"><strong>${entry.username}</strong><span class="history-action">${entry.action}</span></div>
+        <div class="history-meta"><strong><a href="/u/${entry.user_id}" style="color:var(--primary);text-decoration:none">${entry.username}</a></strong><span class="history-action">${entry.action}</span></div>
         <small>${new Date(entry.created_at).toLocaleDateString('fr-FR')}</small>
       </div>
       ${diffsHtml}
@@ -332,7 +332,7 @@ window.openWifiModal = async function(id) {
       ${wifi.isp ? `<p>FAI : <strong>${wifi.isp}</strong></p>` : ''}
       ${wifi.place_type ? `<p>Lieu : <strong>${wifi.place_type}</strong></p>` : ''}
       ${wifi.hours ? `<p>Horaires : <strong>${wifi.hours}</strong></p>` : ''}
-      ${wifi.author_name ? `<p>Ajouté par : <strong>${wifi.author_name}</strong></p>` : ''}
+      ${wifi.author_name ? `<p>Ajouté par : <strong><a href="/u/${wifi.author_id}" style="color:var(--primary);text-decoration:none">${wifi.author_name}</a></strong></p>` : ''}
       ${wifi.last_verified ? `<p style="color:var(--text-muted);font-size:.8rem">Vérifié le ${new Date(wifi.last_verified).toLocaleDateString('fr-FR')}</p>` : ''}
     </div>`;
 
@@ -346,7 +346,7 @@ window.openWifiModal = async function(id) {
 
     const commentsHtml = comments.length ? `<div class="detail-card" style="margin-top:.75rem">
       <h3>Commentaires</h3>
-      ${comments.map(c => `<div class="comment"><strong>${c.username}</strong><small style="margin-left:.5rem">${new Date(c.created_at).toLocaleDateString('fr-FR')}</small><p>${c.content}</p></div>`).join('')}
+      ${comments.map(c => `<div class="comment"><strong><a href="/u/${c.user_id}" style="color:var(--primary);text-decoration:none">${c.username}</a></strong><small style="margin-left:.5rem">${new Date(c.created_at).toLocaleDateString('fr-FR')}</small><p>${c.content}</p></div>`).join('')}
     </div>` : '';
 
     const historyHtml = hist && hist.length ? `<div class="detail-card" style="margin-top:.75rem">

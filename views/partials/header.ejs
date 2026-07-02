@@ -23,7 +23,7 @@
     <a href="/leaderboard">Classement</a>
     <% if (user) { %>
       <% if (user.role === 'admin') { %><a href="/admin" class="btn-primary">Admin</a><% } %>
-      <a href="/account" class="user-badge" style="text-decoration:none;cursor:pointer;">
+      <a href="/u/<%= user.id %>" class="user-badge" style="text-decoration:none;cursor:pointer;">
         <%= user.username %>
         <small><%= user.points %> pts</small>
       </a>

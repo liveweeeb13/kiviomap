@@ -26,7 +26,7 @@
         <% users.forEach(u => { %>
         <tr>
           <td class="td-muted"><%= u.id %></td>
-          <td><strong><%= u.username %></strong></td>
+          <td><strong><a href="/u/<%= u.id %>" style="color:var(--text);text-decoration:none"><%= u.username %></a></strong></td>
           <td class="td-muted"><%= u.email %></td>
           <td><%= u.points %></td>
           <td><%= u.role %></td>

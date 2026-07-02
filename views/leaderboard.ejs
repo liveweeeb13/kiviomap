@@ -9,7 +9,7 @@
         <% topPoints.forEach((u, i) => { %>
         <li>
           <span class="lb-rank"><%= i+1 %></span>
-          <span class="user-badge"><%= u.username %></span>
+          <a href="/u/<%= u.id %>" class="user-badge" style="text-decoration:none"><%= u.username %></a>
           <span class="lb-pts"><%= u.points %> pts</span>
         </li>
         <% }) %>
@@ -20,7 +20,7 @@
       <h3>Plus de réseaux ajoutés</h3>
       <ol>
         <% topNetworks.forEach((u, i) => { %>
-        <li><span class="lb-rank"><%= i+1 %></span> <%= u.username %> <span class="lb-pts"><%= u.count %> réseaux</span></li>
+        <li><span class="lb-rank"><%= i+1 %></span> <a href="/u/<%= u.id %>" style="color:var(--text);text-decoration:none"><%= u.username %></a> <span class="lb-pts"><%= u.count %> réseaux</span></li>
         <% }) %>
       </ol>
     </div>

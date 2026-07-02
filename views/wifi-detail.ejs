@@ -67,7 +67,7 @@
         <div class="progress-bar"><div class="progress-fill" style="width:<%= score %>%;background:<%= scoreColor %>"></div></div>
       </div>
     </div>
-    <% if (wifi.author_name) { %><small>Ajouté par <strong><%= wifi.author_name %></strong></small><% } %>
+    <% if (wifi.author_name) { %><small>Ajouté par <strong><a href="/u/<%= wifi.author_id %>" style="color:var(--primary);text-decoration:none"><%= wifi.author_name %></a></strong></small><% } %>
     <% if (wifi.last_verified) { %><small>Dernière vérification : <%= new Date(wifi.last_verified).toLocaleDateString('fr-FR') %></small><% } %>
   </div>
 
@@ -150,7 +150,7 @@
     <div id="comments-list">
     <% comments.forEach(c => { %>
     <div class="comment">
-      <strong><%= c.username %></strong> <small><%= new Date(c.created_at).toLocaleDateString('fr-FR') %></small>
+      <strong><a href="/u/<%= c.user_id %>" style="color:var(--primary);text-decoration:none"><%= c.username %></a></strong> <small><%= new Date(c.created_at).toLocaleDateString('fr-FR') %></small>
       <p><%= c.content %></p>
     </div>
     <% }) %>
@@ -193,7 +193,7 @@
         <div class="history-main">
           <div class="history-header">
             <div class="history-meta">
-              <strong><%= h.username %></strong>
+              <strong><a href="/u/<%= h.user_id %>" style="color:var(--primary);text-decoration:none"><%= h.username %></a></strong>
               <span class="history-action"><%= h.action %></span>
             </div>
             <small><%= new Date(h.created_at).toLocaleDateString('fr-FR') %></small>

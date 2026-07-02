@@ -1,0 +1,108 @@
+<%- include('partials/header') %>
+<div class="detail-page">
+  <div class="detail-card faq-card" style="margin-bottom:1rem">
+    <div class="faq-hero">
+      <div>
+        <p class="faq-kicker">Profil public</p>
+        <h1><%= profile.username %></h1>
+        <p class="faq-intro">Niveau <%= profile.level %> &nbsp;·&nbsp; Membre depuis <%= new Date(profile.created_at).toLocaleDateString('fr-FR') %></p>
+      </div>
+      <% if (user && user.id === profile.id) { %><a href="/account/settings" class="faq-link">Paramètres</a><% } %>
+    </div>
+    <div class="faq-grid">
+      <div class="faq-box">
+        <h3>Points</h3>
+        <p style="font-size:2rem;font-weight:800;color:var(--primary);margin:0"><%= profile.points %></p>
+      </div>
+      <div class="faq-box">
+        <h3>Niveau</h3>
+        <p style="font-size:2rem;font-weight:800;color:var(--text);margin:0"><%= profile.level %></p>
+      </div>
+      <div class="faq-box">
+        <h3>Réseaux ajoutés</h3>
+        <p style="font-size:2rem;font-weight:800;color:var(--text);margin:0"><%= wifiCount %></p>
+      </div>
+      <div class="faq-box">
+        <h3>Vérifications</h3>
+        <p style="font-size:2rem;font-weight:800;color:var(--text);margin:0"><%= verifCount %></p>
+      </div>
+      <div class="faq-box">
+        <h3>Commentaires</h3>
+        <p style="font-size:2rem;font-weight:800;color:var(--text);margin:0"><%= commentCount %></p>
+      </div>
+    </div>
+  </div>
+
+
+  <% if (history.length) { %>
+  <div class="detail-card" style="margin-top:1rem">
+    <h3>Historique d'activité</h3>
+    <ul class="history-list" id="profile-history-list" style="margin-top:.75rem">
+      <% history.forEach(h => { %>
+      <%
+        const isVerifOk = h.action.includes('✅');
+        const isVerifKo = h.action.includes('❌') || h.action.includes('Ne fonctionne');
+        const isAdd = h.action.includes('ajouté');
+        const kind = isVerifOk ? 'success' : isVerifKo ? 'danger' : isAdd ? 'info' : 'neutral';
+      %>
+      <li class="history-entry history-entry--<%= kind %>">
+        <div class="history-bullet"></div>
+        <div class="history-main">
+          <div class="history-header">
+            <div class="history-meta">
+              <a href="/wifi/<%= h.wifi_id %>" style="color:var(--primary);text-decoration:none;font-weight:600">📶 <%= h.ssid %></a>
+              <span class="history-action"><%= h.action %></span>
+            </div>
+            <small><%= new Date(h.created_at).toLocaleDateString('fr-FR') %></small>
+          </div>
+          <% if (h.diffs && h.diffs.length) { %>
+          <div class="history-diff">
+            <% h.diffs.forEach(d => { %>
+            <div class="history-change <%= d.kind %>">
+              <span class="history-field-name"><%= d.f %></span>
+              <div style="display:flex;flex-direction:column;gap:.2rem;margin-top:.2rem">
+                <span class="history-old"><%= d.ot %></span>
+                <span class="history-new"><%= d.nt %></span>
+              </div>
+            </div>
+            <% }) %>
+          </div>
+          <% } %>
+        </div>
+      </li>
+      <% }) %>
+    </ul>
+    <div class="pagination" id="profile-history-pagination"></div>
+  </div>
+  <% } %>
+
+  <a href="#" class="btn-secondary back-link" style="margin-top:1.5rem;display:inline-block">← Retour</a>
+
+<script>
+  (function() {
+    function paginate(containerId, paginationId, perPage) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      const items = Array.from(container.children);
+      if (items.length <= perPage) return;
+      let page = 0;
+      const pages = Math.ceil(items.length / perPage);
+      function render() {
+        items.forEach((el, i) => el.style.display = (i >= page * perPage && i < (page + 1) * perPage) ? '' : 'none');
+        const nav = document.getElementById(paginationId);
+        nav.innerHTML = '';
+        for (let i = 0; i < pages; i++) {
+          const btn = document.createElement('button');
+          btn.textContent = i + 1;
+          btn.className = 'pagination-btn' + (i === page ? ' active' : '');
+          btn.onclick = () => { page = i; render(); };
+          nav.appendChild(btn);
+        }
+      }
+      render();
+    }
+    paginate('profile-history-list', 'profile-history-pagination', 10);
+  })();
+</script>
+</div>
+<%- include('partials/footer') %>
