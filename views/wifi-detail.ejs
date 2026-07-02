@@ -319,6 +319,18 @@ document.getElementById('form-add-new').addEventListener('submit', async e => {
   if (!data.lat || !data.lng) return showSnackbar('Veuillez définir une localisation.');
   const r = await fetch('/wifi/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
   const json = await r.json();
+  if (r.status === 409 && json.duplicate) {
+    const msg = `⚠️ Un réseau "${json.duplicate.ssid}" existe déjà à moins de 100m (ID #${json.duplicate.id}).\nVoir ce réseau ou ajouter quand même ?`;
+    if (confirm(msg)) {
+      const r2 = await fetch('/wifi/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...data, force: '1' }) });
+      const json2 = await r2.json();
+      if (r2.ok) window.location.href = `/wifi/${json2.id}`;
+      else showSnackbar(json2.error || 'Erreur lors de l\'ajout.');
+    } else {
+      window.location.href = `/wifi/${json.duplicate.id}`;
+    }
+    return;
+  }
   if (r.ok) window.location.href = `/wifi/${json.id}`;
   else showSnackbar(json.error || 'Erreur lors de l\'ajout.');
 });

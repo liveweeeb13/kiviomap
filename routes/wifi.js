@@ -22,6 +22,14 @@ function computeScore(wifiId) {
   return Math.min(100, Math.max(0, score)).toFixed(1);
 }
 
+function haversineMeters(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
 function addPoints(userId, pts) {
   db.prepare(`UPDATE users SET points = points + ?, level = MIN(100, CAST(1 + SQRT(points / 10.0) AS INT)) WHERE id = ?`).run(pts, userId);
   const user = db.prepare(`SELECT points, level FROM users WHERE id = ?`).get(userId);
@@ -88,8 +96,15 @@ router.get('/:id', (req, res) => {
 });
 
 router.post('/add', auth, (req, res) => {
-  const { ssid, password, encryption, captive_portal, gateway, dhcp_range, download_mbps, upload_mbps, ping_ms, isp, place_type, hours, lat, lng } = req.body;
+  const { ssid, password, encryption, captive_portal, gateway, dhcp_range, download_mbps, upload_mbps, ping_ms, isp, place_type, hours, lat, lng, force } = req.body;
   if (!ssid || !encryption || !lat || !lng) return res.status(400).json({ error: 'Champs obligatoires manquants' });
+
+  if (!force) {
+    const nearby = db.prepare(`SELECT id, ssid, lat, lng FROM wifi_points WHERE LOWER(ssid) = LOWER(?)`).all(ssid);
+    const duplicate = nearby.find(w => haversineMeters(parseFloat(lat), parseFloat(lng), w.lat, w.lng) < 100);
+    if (duplicate) return res.status(409).json({ duplicate: { id: duplicate.id, ssid: duplicate.ssid } });
+  }
+
   const result = db.prepare(`INSERT INTO wifi_points (ssid, password, encryption, captive_portal, gateway, dhcp_range, download_mbps, upload_mbps, ping_ms, isp, place_type, hours, lat, lng, author_id, last_verified) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`)
     .run(ssid, password || null, encryption, captive_portal === 'on' ? 1 : 0, gateway || null, dhcp_range || null, download_mbps || null, upload_mbps || null, ping_ms || null, isp || null, place_type || null, hours || null, parseFloat(lat), parseFloat(lng), req.session.user.id);
   db.prepare(`INSERT INTO wifi_history (wifi_id, user_id, action, snapshot) VALUES (?,?,?,?)`).run(result.lastInsertRowid, req.session.user.id, 'Réseau ajouté', JSON.stringify(req.body));
