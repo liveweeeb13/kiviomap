@@ -237,11 +237,16 @@
 </script>
 
 <% if (user) { %>
+<script>
+const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || '';
+function csrfHeaders(extra = {}) {
+  return { ...extra, 'x-csrf-token': CSRF_TOKEN };
+}
 <% if (wifi) { %>
 const WIFI_ID = <%= wifi.id %>;
 
 async function doVerify(status) {
-  const r = await fetch(`/wifi/${WIFI_ID}/verify`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ status }) });
+  const r = await fetch(`/wifi/${WIFI_ID}/verify`, { method: 'POST', headers: csrfHeaders({'Content-Type':'application/json'}), body: JSON.stringify({ status }) });
   const json = await r.json();
   if (r.status === 429) return showSnackbar(`Cooldown actif, réessaye dans ${json.remaining}h`);
   if (r.ok) location.reload();
@@ -260,14 +265,14 @@ togglePasswordField();
 document.getElementById('form-edit').addEventListener('submit', async e => {
   e.preventDefault();
   const data = Object.fromEntries(new FormData(e.target));
-  await fetch(`/wifi/${WIFI_ID}/edit`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+  await fetch(`/wifi/${WIFI_ID}/edit`, { method: 'POST', headers: csrfHeaders({'Content-Type':'application/json'}), body: JSON.stringify(data) });
   location.reload();
 });
 
 document.getElementById('form-comment').addEventListener('submit', async e => {
   e.preventDefault();
   const data = Object.fromEntries(new FormData(e.target));
-  const r = await fetch(`/wifi/${WIFI_ID}/comment`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+  const r = await fetch(`/wifi/${WIFI_ID}/comment`, { method: 'POST', headers: csrfHeaders({'Content-Type':'application/json'}), body: JSON.stringify(data) });
   const json = await r.json();
   if (r.status === 429) return showSnackbar(`Cooldown actif, réessaye dans ${json.remaining} min`);
   location.reload();
@@ -310,6 +315,7 @@ function toggleAddPasswordField() {
 }
 addEncryptionSelect.addEventListener('change', toggleAddPasswordField);
 toggleAddPasswordField();
+document.getElementById('add-location-btn')?.addEventListener('click', getAddLocation);
 
 function getAddLocation() {
   const status = document.getElementById('add-loc-status');
@@ -329,12 +335,12 @@ document.getElementById('form-add-new').addEventListener('submit', async e => {
   e.preventDefault();
   const data = Object.fromEntries(new FormData(e.target));
   if (!data.lat || !data.lng) return showSnackbar('Veuillez définir une localisation.');
-  const r = await fetch('/wifi/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+  const r = await fetch('/wifi/add', { method: 'POST', headers: csrfHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(data) });
   const json = await r.json();
   if (r.status === 409 && json.duplicate) {
     const msg = `⚠️ Un réseau "${json.duplicate.ssid}" existe déjà à moins de 100m (ID #${json.duplicate.id}).\nVoir ce réseau ou ajouter quand même ?`;
     if (confirm(msg)) {
-      const r2 = await fetch('/wifi/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...data, force: '1' }) });
+      const r2 = await fetch('/wifi/add', { method: 'POST', headers: csrfHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ ...data, force: '1' }) });
       const json2 = await r2.json();
       if (r2.ok) window.location.href = `/wifi/${json2.id}`;
       else showSnackbar(json2.error || 'Erreur lors de l\'ajout.');

@@ -6,6 +6,7 @@ const session = require('express-session');
 const SQLiteStore = require('connect-sqlite3')(session);
 const rateLimit = require('express-rate-limit');
 const path = require('path');
+const crypto = require('crypto');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -34,7 +35,19 @@ app.use(session({
 }));
 
 app.use((req, res, next) => {
+  if (!req.session.csrfToken) req.session.csrfToken = crypto.randomBytes(32).toString('hex');
+  res.locals.csrfToken = req.session.csrfToken;
   res.locals.user = req.session.user || null;
+  next();
+});
+
+app.use((req, res, next) => {
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return next();
+  const token = req.get('x-csrf-token') || req.body?._csrf;
+  if (!token || token !== req.session.csrfToken) {
+    if (req.accepts('json')) return res.status(403).json({ error: 'Jeton CSRF invalide' });
+    return res.status(403).send('Jeton CSRF invalide');
+  }
   next();
 });
 
@@ -79,6 +92,15 @@ async function sendBrevoEmail({ to, subject, html }) {
   );
 }
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function adminAuth(req, res, next) {
   if (!req.session.user || req.session.user.role !== 'admin') return res.status(403).send('Accès refusé');
   next();
@@ -114,7 +136,7 @@ app.post('/admin/mail', adminAuth, async (req, res) => {
             <p style="margin:0;font-size:22px;font-weight:700;color:#1a1a1a">Kiviomap</p>
           </td></tr>
           <tr><td style="padding:0 40px 32px">
-            ${body.split('\n').map(line => line.trim() ? `<p style="margin:0 0 16px;font-size:15px;color:#444;line-height:1.7">${line}</p>` : '<br>').join('')}
+            ${body.split('\n').map(line => line.trim() ? `<p style="margin:0 0 16px;font-size:15px;color:#444;line-height:1.7">${escapeHtml(line)}</p>` : '<br>').join('')}
             <hr style="border:none;border-top:1px solid #ebebeb;margin:24px 0">
             <p style="margin:0;font-size:13px;color:#999">L'équipe Kiviomap</p>
           </td></tr>
@@ -248,11 +270,13 @@ app.post('/admin/user/:id', adminAuth, async (req, res) => {
   const db = require('./db');
   const bcrypt = require('bcrypt');
   const { username, email, password, points, role } = req.body;
+  const parsedPoints = Math.max(0, Number.parseInt(points, 10) || 0);
+  const level = Math.min(100, Math.trunc(1 + Math.sqrt(parsedPoints / 10)));
   if (password && password.trim()) {
     const hash = await bcrypt.hash(password, 10);
-    db.prepare('UPDATE users SET username=?, email=?, password=?, points=?, level=MIN(100, CAST(1 + SQRT(points / 10.0) AS INT)), role=?, session_version=session_version+1 WHERE id=?').run(username, email, hash, points, role, req.params.id);
+    db.prepare('UPDATE users SET username=?, email=?, password=?, points=?, level=?, role=?, session_version=session_version+1 WHERE id=?').run(username, email, hash, parsedPoints, level, role, req.params.id);
   } else {
-    db.prepare('UPDATE users SET username=?, email=?, points=?, level=MIN(100, CAST(1 + SQRT(points / 10.0) AS INT)), role=? WHERE id=?').run(username, email, points, role, req.params.id);
+    db.prepare('UPDATE users SET username=?, email=?, points=?, level=?, role=? WHERE id=?').run(username, email, parsedPoints, level, role, req.params.id);
   }
   if (req.session.user.id == req.params.id) {
     const updated = db.prepare('SELECT * FROM users WHERE id=?').get(req.params.id);
