@@ -50,7 +50,20 @@ router.get('/leaderboard', (req, res) => {
 });
 
 router.get('/api/wifi', (req, res) => {
-  const points = db.prepare(`SELECT w.*, u.username as author_name FROM wifi_points w LEFT JOIN users u ON w.author_id = u.id`).all();
+  const points = db.prepare(`
+    SELECT
+      w.id,
+      w.ssid,
+      w.encryption,
+      w.place_type,
+      w.isp,
+      w.lat,
+      w.lng,
+      w.confidence_score,
+      u.username as author_name
+    FROM wifi_points w
+    LEFT JOIN users u ON w.author_id = u.id
+  `).all();
   const features = points.map(p => ({
     type: 'Feature',
     geometry: { type: 'Point', coordinates: [p.lng, p.lat] },
