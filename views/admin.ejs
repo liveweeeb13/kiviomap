@@ -10,7 +10,7 @@
     <a href="/admin/mail" class="btn-secondary">📧 Envoyer un mail</a>
   </div>
 
-<div id="tab-users" class="detail-card">
+<div id="tab-users" class="detail-card admin-table-card">
     <table class="admin-table">
       <thead>
         <tr>
@@ -50,7 +50,7 @@
     </table>
   </div>
 
-<div id="tab-networks" class="detail-card" style="display:none">
+<div id="tab-networks" class="detail-card admin-table-card" style="display:none">
   <table class="admin-table">
     <thead>
       <tr>
@@ -65,7 +65,7 @@
       <tr>
         <td class="td-muted"><%= n.id %></td>
         <td><strong><%= n.ssid %></strong></td>
-        <td class="td-muted"><%= n.lat.toFixed(5) %>, <%= n.lng.toFixed(5) %></td>
+        <td class="td-muted td-coordinates"><%= n.lat.toFixed(5) %>, <%= n.lng.toFixed(5) %></td>
         <td class="admin-actions">
           <a href="/wifi/<%= n.id %>" class="admin-btn" title="Éditer" style="text-decoration:none">✏️</a>
           <form action="/admin/network/<%= n.id %>/delete" method="POST" class="delete-network-form">

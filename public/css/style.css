@@ -959,8 +959,14 @@ code {
 .nitro { color: #c4b5fd; }
 
 /* ── ADMIN TABLE ────────────────────────────────────── */
+.admin-table-card {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .admin-table {
   width: 100%;
+  min-width: 640px;
   border-collapse: collapse;
   font-size: .875rem;
 }
@@ -985,6 +991,7 @@ code {
 }
 .admin-table tr:last-child td { border-bottom: none; }
 .td-muted { color: var(--text-muted); }
+.td-coordinates { white-space: nowrap; font-variant-numeric: tabular-nums; }
 .admin-input {
   background: var(--surface2);
   border: 1px solid var(--border);
@@ -1274,6 +1281,28 @@ code {
   }
   .detail-card {
     padding: 1rem;
+  }
+  .admin-table-card {
+    padding: .75rem;
+    overflow-x: auto;
+    scrollbar-gutter: stable;
+  }
+  #tab-users .admin-table {
+    min-width: 680px;
+  }
+  #tab-networks .admin-table {
+    min-width: 430px;
+  }
+  .admin-table th,
+  .admin-table td {
+    padding: .45rem .55rem;
+  }
+  .admin-table-card::after {
+    content: 'Faites glisser horizontalement';
+    display: block;
+    margin-top: .55rem;
+    color: var(--text-muted);
+    font-size: .72rem;
   }
   .pagination {
     justify-content: center;
