@@ -1297,13 +1297,13 @@ code {
   .admin-table td {
     padding: .45rem .55rem;
   }
-  .admin-table-card::after {
-    content: 'Faites glisser horizontalement';
+/*  .admin-table-card::after {
+   content: 'Faites glisser horizontalement';
     display: block;
     margin-top: .55rem;
     color: var(--text-muted);
     font-size: .72rem;
-  }
+  }*/
   .pagination {
     justify-content: center;
   }
