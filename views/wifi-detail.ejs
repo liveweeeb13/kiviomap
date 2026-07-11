@@ -252,6 +252,10 @@ async function doVerify(status) {
   if (r.ok) location.reload();
 }
 
+document.querySelectorAll('.verify-btn').forEach(btn => {
+  btn.addEventListener('click', () => doVerify(btn.dataset.status));
+});
+
 const encryptionSelect = document.getElementById('encryption-select');
 const passwordField = document.getElementById('password-field');
 function togglePasswordField() {
