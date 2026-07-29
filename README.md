@@ -1,6 +1,6 @@
-# [Kiviomap](https://kiviomap.liveweeeb.dpdns.org)
+# [Kiviomap](https://kiviomap.io)
 
-https://kiviomap.liveweeeb.dpdns.org
+https://kiviomap.io
 
 .env
 ```
