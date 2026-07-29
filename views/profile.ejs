@@ -17,6 +17,11 @@
       <div class="faq-box">
         <h3>Niveau</h3>
         <p style="font-size:2rem;font-weight:800;color:var(--text);margin:0"><%= profile.level %></p>
+        <% const nextLevelPoints = profile.level * profile.level * 10; const prevLevelPoints = (profile.level - 1) * (profile.level - 1) * 10; const progress = Math.min(100, Math.round((profile.points - prevLevelPoints) / (nextLevelPoints - prevLevelPoints) * 100)); %>
+        <div style="margin-top:.6rem;background:var(--border,#e0d6cc);border-radius:99px;height:8px;overflow:hidden">
+          <div style="height:100%;width:<%= progress %>%;background:var(--primary);border-radius:99px;transition:width .4s"></div>
+        </div>
+        <p style="font-size:.75rem;color:var(--muted,#999);margin:.3rem 0 0"><%= profile.points %> / <%= nextLevelPoints %> pts</p>
       </div>
       <div class="faq-box">
         <h3>Réseaux ajoutés</h3>
