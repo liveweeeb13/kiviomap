@@ -30,8 +30,23 @@ function haversineMeters(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
+function parseCoordinate(value, min, max) {
+  const parsed = Number.parseFloat(value);
+  if (!Number.isFinite(parsed) || parsed < min || parsed > max) return null;
+  return parsed;
+}
+
+function optionalNumber(value) {
+  if (value === undefined || value === null || value === '') return null;
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+}
+
 function addPoints(userId, pts) {
-  db.prepare(`UPDATE users SET points = points + ?, level = MIN(100, CAST(1 + SQRT(points / 10.0) AS INT)) WHERE id = ?`).run(pts, userId);
+  const current = db.prepare(`SELECT points FROM users WHERE id = ?`).get(userId);
+  const points = Math.max(0, (current?.points || 0) + pts);
+  const level = Math.min(100, Math.trunc(1 + Math.sqrt(points / 10)));
+  db.prepare(`UPDATE users SET points = ?, level = ? WHERE id = ?`).run(points, level, userId);
   const user = db.prepare(`SELECT points, level FROM users WHERE id = ?`).get(userId);
   return user;
 }
@@ -97,16 +112,18 @@ router.get('/:id', (req, res) => {
 
 router.post('/add', auth, (req, res) => {
   const { ssid, password, encryption, captive_portal, gateway, dhcp_range, download_mbps, upload_mbps, ping_ms, isp, place_type, hours, lat, lng, force } = req.body;
-  if (!ssid || !encryption || !lat || !lng) return res.status(400).json({ error: 'Champs obligatoires manquants' });
+  const parsedLat = parseCoordinate(lat, -90, 90);
+  const parsedLng = parseCoordinate(lng, -180, 180);
+  if (!ssid || !encryption || parsedLat === null || parsedLng === null) return res.status(400).json({ error: 'Champs obligatoires invalides' });
 
   if (!force) {
     const nearby = db.prepare(`SELECT id, ssid, lat, lng FROM wifi_points WHERE LOWER(ssid) = LOWER(?)`).all(ssid);
-    const duplicate = nearby.find(w => haversineMeters(parseFloat(lat), parseFloat(lng), w.lat, w.lng) < 100);
+    const duplicate = nearby.find(w => haversineMeters(parsedLat, parsedLng, w.lat, w.lng) < 100);
     if (duplicate) return res.status(409).json({ duplicate: { id: duplicate.id, ssid: duplicate.ssid } });
   }
 
   const result = db.prepare(`INSERT INTO wifi_points (ssid, password, encryption, captive_portal, gateway, dhcp_range, download_mbps, upload_mbps, ping_ms, isp, place_type, hours, lat, lng, author_id, last_verified) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`)
-    .run(ssid, password || null, encryption, captive_portal === 'on' ? 1 : 0, gateway || null, dhcp_range || null, download_mbps || null, upload_mbps || null, ping_ms || null, isp || null, place_type || null, hours || null, parseFloat(lat), parseFloat(lng), req.session.user.id);
+    .run(ssid.trim(), password || null, encryption, captive_portal === 'on' || captive_portal === '1' ? 1 : 0, gateway || null, dhcp_range || null, optionalNumber(download_mbps), optionalNumber(upload_mbps), optionalNumber(ping_ms), isp || null, place_type || null, hours || null, parsedLat, parsedLng, req.session.user.id);
   db.prepare(`INSERT INTO wifi_history (wifi_id, user_id, action, snapshot) VALUES (?,?,?,?)`).run(result.lastInsertRowid, req.session.user.id, 'Réseau ajouté', JSON.stringify(req.body));
   const updated = addPoints(req.session.user.id, 10);
   req.session.user.points = updated.points;
@@ -118,8 +135,11 @@ router.post('/:id/edit', auth, (req, res) => {
   const wifi = db.prepare(`SELECT * FROM wifi_points WHERE id = ?`).get(req.params.id);
   if (!wifi) return res.status(404).json({ error: 'Introuvable' });
   const { ssid, password, encryption, captive_portal, gateway, dhcp_range, download_mbps, upload_mbps, ping_ms, isp, place_type, hours, lat, lng } = req.body;
+  const parsedLat = parseCoordinate(lat, -90, 90);
+  const parsedLng = parseCoordinate(lng, -180, 180);
+  if (!ssid || !encryption || parsedLat === null || parsedLng === null) return res.status(400).json({ error: 'Champs obligatoires invalides' });
   db.prepare(`UPDATE wifi_points SET ssid=?, password=?, encryption=?, captive_portal=?, gateway=?, dhcp_range=?, download_mbps=?, upload_mbps=?, ping_ms=?, isp=?, place_type=?, hours=?, lat=?, lng=? WHERE id=?`)
-    .run(ssid, password || null, encryption, (captive_portal === 'on' || captive_portal === '1') ? 1 : 0, gateway || null, dhcp_range || null, download_mbps || null, upload_mbps || null, ping_ms || null, isp || null, place_type || null, hours || null, parseFloat(lat) || wifi.lat, parseFloat(lng) || wifi.lng, wifi.id);
+    .run(ssid.trim(), password || null, encryption, (captive_portal === 'on' || captive_portal === '1') ? 1 : 0, gateway || null, dhcp_range || null, optionalNumber(download_mbps), optionalNumber(upload_mbps), optionalNumber(ping_ms), isp || null, place_type || null, hours || null, parsedLat, parsedLng, wifi.id);
   db.prepare(`INSERT INTO wifi_history (wifi_id, user_id, action, snapshot) VALUES (?,?,?,?)`).run(wifi.id, req.session.user.id, 'Informations modifiées', JSON.stringify({ before: wifi, after: req.body }));
   const score = computeScore(wifi.id);
   db.prepare(`UPDATE wifi_points SET confidence_score = ? WHERE id = ?`).run(score, wifi.id);

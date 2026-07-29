@@ -97,7 +97,8 @@ router.post('/delete', authRequired, async (req, res) => {
   if (!await bcrypt.compare(password, user.password))
     return res.render('account-settings', { error: 'Mot de passe incorrect.', success: null });
 
-  db.prepare(`UPDATE users SET username = 'Utilisateur supprimé', email = '', password = '', session_version = session_version + 1 WHERE id = ?`).run(user.id);
+  db.prepare(`UPDATE users SET username = ?, email = ?, password = '', session_version = session_version + 1 WHERE id = ?`)
+    .run(`Utilisateur supprimé ${user.id}`, `deleted-${user.id}@kiviomap.local`, user.id);
   db.prepare('DELETE FROM password_resets WHERE user_id = ?').run(user.id);
   db.prepare('DELETE FROM email_verifications WHERE email = ?').run(user.email);
 

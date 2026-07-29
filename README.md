@@ -8,6 +8,8 @@ BREVO_API_KEY=
 FROM_EMAIL=
 APP_URL=
 SESSION_SECRET=
+#NODE_ENV=production
+#NODE_ENV=development
 ```
 
 npm install

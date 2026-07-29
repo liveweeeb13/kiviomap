@@ -1,5 +1,19 @@
 let map, addMarker;
 const IS_LOGGED = document.body && document.body.dataset && document.body.dataset.isLogged === 'true';
+const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function csrfHeaders(extra = {}) {
+  return { ...extra, 'x-csrf-token': CSRF_TOKEN };
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   map = L.map('map', { maxZoom: 19 }).setView([48.8566, 2.3522], 13);
@@ -326,13 +340,13 @@ window.openWifiModal = async function(id) {
     const infoCard = `<div class="detail-card">
       <h3>Réseau</h3>
       <p>Chiffrement : <strong>${fmtEncryption(wifi.encryption)}</strong></p>
-      ${wifi.password ? `<p>Mot de passe : <code class="pwd-reveal">${wifi.password}</code></p>` : ''}
+      ${wifi.password ? `<p>Mot de passe : <code class="pwd-reveal">${escapeHtml(wifi.password)}</code></p>` : ''}
       <p>Captive portal : <strong>${wifi.captive_portal ? 'Oui' : 'Non'}</strong></p>
-      ${wifi.gateway ? `<p>Passerelle : <code>${wifi.gateway}</code></p>` : ''}
-      ${wifi.dhcp_range ? `<p>DHCP : <code>${wifi.dhcp_range}</code></p>` : ''}
-      ${wifi.isp ? `<p>FAI : <strong>${wifi.isp}</strong></p>` : ''}
-      ${wifi.place_type ? `<p>Lieu : <strong>${wifi.place_type}</strong></p>` : ''}
-      ${wifi.hours ? `<p>Horaires : <strong>${wifi.hours}</strong></p>` : ''}
+      ${wifi.gateway ? `<p>Passerelle : <code>${escapeHtml(wifi.gateway)}</code></p>` : ''}
+      ${wifi.dhcp_range ? `<p>DHCP : <code>${escapeHtml(wifi.dhcp_range)}</code></p>` : ''}
+      ${wifi.isp ? `<p>FAI : <strong>${escapeHtml(wifi.isp)}</strong></p>` : ''}
+      ${wifi.place_type ? `<p>Lieu : <strong>${escapeHtml(wifi.place_type)}</strong></p>` : ''}
+      ${wifi.hours ? `<p>Horaires : <strong>${escapeHtml(wifi.hours)}</strong></p>` : ''}
       ${wifi.author_name ? `<p>Ajouté par : <strong><a href="/u/${wifi.author_id}" style="color:var(--primary);text-decoration:none">${wifi.author_name}</a></strong></p>` : ''}
       ${wifi.last_verified ? `<p style="color:var(--text-muted);font-size:.8rem">Vérifié le ${new Date(wifi.last_verified).toLocaleDateString('fr-FR')}</p>` : ''}
     </div>`;
@@ -347,7 +361,7 @@ window.openWifiModal = async function(id) {
 
     const commentsHtml = comments.length ? `<div class="detail-card" style="margin-top:.75rem">
       <h3>Commentaires</h3>
-      ${comments.map(c => `<div class="comment"><strong><a href="/u/${c.user_id}" style="color:var(--primary);text-decoration:none">${c.username}</a></strong><small style="margin-left:.5rem">${new Date(c.created_at).toLocaleDateString('fr-FR')}</small><p>${c.content}</p></div>`).join('')}
+      ${comments.map(c => `<div class="comment"><strong><a href="/u/${c.user_id}" style="color:var(--primary);text-decoration:none">${escapeHtml(c.username)}</a></strong><small style="margin-left:.5rem">${new Date(c.created_at).toLocaleDateString('fr-FR')}</small><p>${escapeHtml(c.content)}</p></div>`).join('')}
     </div>` : '';
 
     const historyHtml = hist && hist.length ? `<div class="detail-card" style="margin-top:.75rem">
@@ -372,7 +386,7 @@ window.openWifiModal = async function(id) {
 
     body.querySelectorAll('.verify-sidebar-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
-        const r = await fetch(`/wifi/${btn.dataset.id}/verify`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ status: btn.dataset.status }) });
+        const r = await fetch(`/wifi/${btn.dataset.id}/verify`, { method: 'POST', headers: csrfHeaders({'Content-Type':'application/json'}), body: JSON.stringify({ status: btn.dataset.status }) });
         const json = await r.json();
         if (r.status === 429) return showSnackbar(`Cooldown actif, réessaye dans ${json.remaining}h`);
         if (r.ok) openWifiModal(btn.dataset.id);
@@ -417,7 +431,7 @@ window.openEditForm = async function(id) {
     <button class="btn-secondary sidebar-back-btn" style="margin-bottom:1rem">← Retour</button>
     <form id="sidebar-edit-form" class="detail-card">
       <h3>Modifier le réseau</h3>
-      <label class="ssid-label">SSID<span class="ssid-help"><a href="/faq/ssid" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span> *<input type="text" name="ssid" value="${wifi.ssid}" required></label>
+      <label class="ssid-label">SSID<span class="ssid-help"><a href="/faq/ssid" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span> *<input type="text" name="ssid" value="${escapeHtml(wifi.ssid)}" required></label>
       <label class="ssid-label">Chiffrement<span class="ssid-help"><a href="/faq/security" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span> *
         <select name="encryption" id="sidebar-enc">
           <option value="open" ${wifi.encryption==='open'?'selected':''}>Ouvert</option>
@@ -426,7 +440,7 @@ window.openEditForm = async function(id) {
           <option value="wep" ${wifi.encryption==='wep'?'selected':''}>WEP</option>
         </select>
       </label>
-      <label class="ssid-label" id="sidebar-pwd-field">Mot de passe<span class="ssid-help"><a href="/faq/password" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span><input type="text" name="password" value="${wifi.password || ''}"></label>
+      <label class="ssid-label" id="sidebar-pwd-field">Mot de passe<span class="ssid-help"><a href="/faq/password" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span><input type="text" name="password" value="${escapeHtml(wifi.password || '')}"></label>
       <label class="ssid-label">Captive portal<span class="ssid-help"><a href="/faq/captiveportal" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span>
         <select name="captive_portal">
           <option value="">•</option>
@@ -446,9 +460,9 @@ window.openEditForm = async function(id) {
           ${['Restaurant','Café','Bibliothèque','Hôtel','Gare','Aéroport','Autre'].map(v => `<option ${wifi.place_type===v?'selected':''}>${v}</option>`).join('')}
         </select>
       </label>
-      <label class="ssid-label">Horaires<span class="ssid-help"><a href="/faq/hours" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span><input type="text" name="hours" value="${wifi.hours || ''}" placeholder="Mo-Fr 08:00-20:00"></label>
-      <label class="ssid-label">Passerelle<span class="ssid-help"><a href="/faq/gateway" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span><input type="text" name="gateway" value="${wifi.gateway || ''}"></label>
-      <label class="ssid-label">DHCP<span class="ssid-help"><a href="/faq/dhcp" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span><input type="text" name="dhcp_range" value="${wifi.dhcp_range || ''}"></label>
+      <label class="ssid-label">Horaires<span class="ssid-help"><a href="/faq/hours" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span><input type="text" name="hours" value="${escapeHtml(wifi.hours || '')}" placeholder="Mo-Fr 08:00-20:00"></label>
+      <label class="ssid-label">Passerelle<span class="ssid-help"><a href="/faq/gateway" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span><input type="text" name="gateway" value="${escapeHtml(wifi.gateway || '')}"></label>
+      <label class="ssid-label">DHCP<span class="ssid-help"><a href="/faq/dhcp" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span><input type="text" name="dhcp_range" value="${escapeHtml(wifi.dhcp_range || '')}"></label>
       <label class="ssid-label">Débit ↓ (Mbps)<span class="ssid-help"><a href="/faq/speedtest" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span><input type="number" name="download_mbps" min="0" step="0.1" value="${wifi.download_mbps || ''}"></label>
       <label class="ssid-label">Débit ↑ (Mbps)<span class="ssid-help"><a href="/faq/speedtest" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span><input type="number" name="upload_mbps" min="0" step="0.1" value="${wifi.upload_mbps || ''}"></label>
       <label class="ssid-label">Ping (ms)<span class="ssid-help"><a href="/faq/speedtest" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span><input type="number" name="ping_ms" min="0" value="${wifi.ping_ms || ''}"></label>
@@ -474,7 +488,7 @@ window.openEditForm = async function(id) {
     e.preventDefault();
     const data = Object.fromEntries(new FormData(e.target));
     try {
-      const res = await fetch(`/wifi/${id}/edit`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+      const res = await fetch(`/wifi/${id}/edit`, { method: 'POST', headers: csrfHeaders({'Content-Type':'application/json'}), body: JSON.stringify(data) });
       const json = await res.json();
       if (res.ok) {
         showSnackbar('Modifications sauvegardées !');
