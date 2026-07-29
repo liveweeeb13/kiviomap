@@ -729,13 +729,15 @@ body {
 }
 
 .alert-success {
-  background: rgba(122,170,106,.1);
-  border: 1px solid rgba(122,170,106,.3);
+  background: rgba(122,170,106,.2);
+  border: 1px solid rgba(122,170,106,.5);
   border-radius: 8px;
-  padding: .65rem .9rem;
+  padding: .75rem 1rem;
   margin-bottom: 1.25rem;
   color: #a3d995;
   font-size: .875rem;
+  text-align: center;
+  font-weight: 600;
 }
 
 /* ── DETAIL PAGE ────────────────────────────────────── */
@@ -1407,4 +1409,15 @@ code {
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
-`n.alert-error {`n  background: rgba(239,68,68,.1);`n  border: 1px solid rgba(239,68,68,.3);`n  border-radius: 8px;`n  padding: .65rem .9rem;`n  margin-bottom: 1.25rem;`n  color: #fca5a5;`n  font-size: .875rem;`n}
+
+.alert-error {
+  background: rgba(239,68,68,.2);
+  border: 1px solid rgba(239,68,68,.5);
+  border-radius: 8px;
+  padding: .75rem 1rem;
+  margin-bottom: 1.25rem;
+  color: #fca5a5;
+  font-size: .875rem;
+  text-align: center;
+  font-weight: 600;
+}
