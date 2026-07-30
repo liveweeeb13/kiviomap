@@ -48,7 +48,10 @@
       <div style="font-size:.82rem;color:var(--green);margin-bottom:.75rem">📍 Position définie depuis la carte</div>
       <% } %>
 
-      <button type="submit" class="btn-primary" style="width:100%;justify-content:center">Ajouter le réseau</button>
+      <div style="display:flex;gap:.75rem;margin-top:.5rem">
+        <button type="submit" name="anonymous" value="0" class="btn-primary" style="flex:1;justify-content:center">Ajouter le réseau</button>
+        <button type="submit" name="anonymous" value="1" class="btn-secondary" style="flex:1;justify-content:center">👤 Mode anonyme</button>
+      </div>
     </form>
   </div>
 
@@ -67,7 +70,8 @@
         <div class="progress-bar"><div class="progress-fill" style="width:<%= score %>%;background:<%= scoreColor %>"></div></div>
       </div>
     </div>
-    <% if (wifi.author_name) { %><small>Ajouté par <strong><a href="/u/<%= wifi.author_id %>" style="color:var(--primary);text-decoration:none"><%= wifi.author_name %></a></strong></small><% } %>
+    <% if (wifi.author_name && !wifi.anonymous) { %><small>Ajouté par <strong><a href="/u/<%= wifi.author_id %>" style="color:var(--primary);text-decoration:none"><%= wifi.author_name %></a></strong></small><% } %>
+    <% if (wifi.anonymous) { %><small>Ajouté anonymement</small><% } %>
     <% if (wifi.last_verified) { %><small>Dernière vérification : <%= new Date(wifi.last_verified).toLocaleDateString('fr-FR') %></small><% } %>
   </div>
 
@@ -130,7 +134,10 @@
       <label class="ssid-label">Ping (ms)<span class="ssid-help"><a href="/faq/speedtest" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0;">?</a></span><input type="number" name="ping_ms" min="0" value="<%= wifi.ping_ms || '' %>"></label>
       <label class="ssid-label">Latitude (Nord)<span class="ssid-help"><a href="/faq/coordinates" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0;">?</a></span><input type="number" name="lat" step="any" value="<%= wifi.lat %>"></label>
       <label class="ssid-label">Longitude (Est)<span class="ssid-help"><a href="/faq/coordinates" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0;">?</a></span><input type="number" name="lng" step="any" value="<%= wifi.lng %>"></label>
-      <button type="submit" class="btn-primary">Sauvegarder</button>
+      <div style="display:flex;gap:.75rem;margin-top:.5rem">
+        <button type="submit" name="anonymous" value="0" class="btn-primary">Sauvegarder</button>
+        <button type="submit" name="anonymous" value="1" class="btn-secondary">👤 Anonyme</button>
+      </div>
     </form>
   </div>
 
@@ -193,7 +200,7 @@
         <div class="history-main">
           <div class="history-header">
             <div class="history-meta">
-              <strong><a href="/u/<%= h.user_id %>" style="color:var(--primary);text-decoration:none"><%= h.username %></a></strong>
+              <% if (h.anonymous) { %><strong style="color:var(--text-muted)">Anonyme</strong><% } else { %><strong><a href="/u/<%= h.user_id %>" style="color:var(--primary);text-decoration:none"><%= h.username %></a></strong><% } %>
               <span class="history-action"><%= h.action %></span>
             </div>
             <small><%= new Date(h.created_at).toLocaleDateString('fr-FR') %></small>
@@ -269,6 +276,7 @@ togglePasswordField();
 document.getElementById('form-edit').addEventListener('submit', async e => {
   e.preventDefault();
   const data = Object.fromEntries(new FormData(e.target));
+  data.anonymous = e.submitter?.value === '1' ? '1' : '0';
   await fetch(`/wifi/${WIFI_ID}/edit`, { method: 'POST', headers: csrfHeaders({'Content-Type':'application/json'}), body: JSON.stringify(data) });
   location.reload();
 });
@@ -338,6 +346,7 @@ function getAddLocation() {
 document.getElementById('form-add-new').addEventListener('submit', async e => {
   e.preventDefault();
   const data = Object.fromEntries(new FormData(e.target));
+  data.anonymous = e.submitter?.value === '1' ? '1' : '0';
   if (!data.lat || !data.lng) return showSnackbar('Veuillez définir une localisation.');
   const r = await fetch('/wifi/add', { method: 'POST', headers: csrfHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(data) });
   const json = await r.json();

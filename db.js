@@ -162,6 +162,8 @@ _ready = initSqlJs().then(SQL => {
     _db = new SQL.Database();
   }
   _db.run(SCHEMA);
+  try { _db.run(`ALTER TABLE wifi_points ADD COLUMN anonymous INTEGER DEFAULT 0`); } catch(e) {}
+  try { _db.run(`ALTER TABLE wifi_history ADD COLUMN anonymous INTEGER DEFAULT 0`); } catch(e) {}
   save();
   db.ready = Promise.resolve();
   return db;

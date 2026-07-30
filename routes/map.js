@@ -16,7 +16,7 @@ router.get('/u/:id', (req, res) => {
     SELECT h.action, h.snapshot, h.created_at, w.ssid, w.id as wifi_id
     FROM wifi_history h
     JOIN wifi_points w ON h.wifi_id = w.id
-    WHERE h.user_id = ?
+    WHERE h.user_id = ? AND (h.anonymous IS NULL OR h.anonymous = 0)
     ORDER BY h.created_at DESC
   `).all(profile.id);
 

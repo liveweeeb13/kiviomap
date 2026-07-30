@@ -1069,15 +1069,20 @@ code {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: #3b82f6;
-  color: #fff;
-  font-weight: 700;
-  font-size: .85rem;
+  background: radial-gradient(circle at 35% 35%, #e8924f, var(--primary-dark));
+  color: #1c1a17;
+  font-weight: 800;
+  font-size: .8rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid rgba(255,255,255,.3);
-  box-shadow: var(--shadow);
+  border: 2px solid rgba(255,255,255,.15);
+  box-shadow: 0 2px 12px rgba(200,121,65,.45), 0 1px 3px rgba(0,0,0,.4);
+  letter-spacing: -.5px;
+  transition: transform .15s;
+}
+.cluster-icon:hover {
+  transform: scale(1.1);
 }
 
 /* ── SEARCH BAR ─────────────────────────────────────── */

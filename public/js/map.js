@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .setLatLng(e.latlng)
         .setContent(`
           <div style="display:flex;flex-direction:column;gap:.5rem;min-width:160px">
-            <a href="/wifi/add?lat=${lat}&lng=${lng}" class="btn-primary" style="justify-content:center">Créer un réseau</a>
+            <a href="/wifi/add?lat=${lat}&lng=${lng}" class="btn-primary add-wifi-link" data-lat="${lat}" data-lng="${lng}" style="justify-content:center">Créer un réseau</a>
             <button type="button" data-copy-coords="${lat.toFixed(6)}, ${lng.toFixed(6)}" class="btn-secondary copy-coords-btn" style="justify-content:center">Copier les coordonnées</button>
           </div>
         `)
@@ -156,6 +156,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const id = detailLink.dataset.id;
       openWifiModal(id);
       showVpnToast();
+      return;
+    }
+
+    const addLink = e.target.closest('.add-wifi-link');
+    if (addLink && window.innerWidth >= 768) {
+      e.preventDefault();
+      openAddModal(parseFloat(addLink.dataset.lat), parseFloat(addLink.dataset.lng));
       return;
     }
 
@@ -314,7 +321,7 @@ function renderHistoryEntry(entry) {
     <div class="history-bullet"></div>
     <div class="history-main">
       <div class="history-header">
-        <div class="history-meta"><strong><a href="/u/${entry.user_id}" style="color:var(--primary);text-decoration:none">${entry.username}</a></strong><span class="history-action">${entry.action}</span></div>
+        <div class="history-meta"><strong>${entry.username ? `<a href="/u/${entry.user_id}" style="color:var(--primary);text-decoration:none">${entry.username}</a>` : 'Anonyme'}</strong><span class="history-action">${entry.action}</span></div>
         <small>${new Date(entry.created_at).toLocaleDateString('fr-FR')}</small>
       </div>
       ${diffsHtml}
@@ -347,7 +354,7 @@ window.openWifiModal = async function(id) {
       ${wifi.isp ? `<p>FAI : <strong>${escapeHtml(wifi.isp)}</strong></p>` : ''}
       ${wifi.place_type ? `<p>Lieu : <strong>${escapeHtml(wifi.place_type)}</strong></p>` : ''}
       ${wifi.hours ? `<p>Horaires : <strong>${escapeHtml(wifi.hours)}</strong></p>` : ''}
-      ${wifi.author_name ? `<p>Ajouté par : <strong><a href="/u/${wifi.author_id}" style="color:var(--primary);text-decoration:none">${wifi.author_name}</a></strong></p>` : ''}
+      ${wifi.author_name && !wifi.anonymous ? `<p>Ajouté par : <strong><a href="/u/${wifi.author_id}" style="color:var(--primary);text-decoration:none">${wifi.author_name}</a></strong></p>` : wifi.anonymous ? `<p>Ajouté par : <strong>Anonyme</strong></p>` : ''}
       ${wifi.last_verified ? `<p style="color:var(--text-muted);font-size:.8rem">Vérifié le ${new Date(wifi.last_verified).toLocaleDateString('fr-FR')}</p>` : ''}
     </div>`;
 
@@ -468,7 +475,10 @@ window.openEditForm = async function(id) {
       <label class="ssid-label">Ping (ms)<span class="ssid-help"><a href="/faq/speedtest" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span><input type="number" name="ping_ms" min="0" value="${wifi.ping_ms || ''}"></label>
       <label class="ssid-label">Latitude<span class="ssid-help"><a href="/faq/coordinates" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span><input type="number" name="lat" step="any" value="${wifi.lat}"></label>
       <label class="ssid-label">Longitude<span class="ssid-help"><a href="/faq/coordinates" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a></span><input type="number" name="lng" step="any" value="${wifi.lng}"></label>
-      <button type="submit" class="btn-primary" style="width:100%;justify-content:center;margin-top:.5rem">Sauvegarder</button>
+      <div style="display:flex;gap:.5rem;margin-top:.5rem">
+        <button type="submit" name="anonymous" value="0" class="btn-primary" style="flex:1;justify-content:center">Sauvegarder</button>
+        <button type="submit" name="anonymous" value="1" class="btn-secondary" style="flex-shrink:0;justify-content:center">👤 Anonyme</button>
+      </div>
     </form>`;
 
   const enc = document.getElementById('sidebar-enc');
@@ -487,6 +497,7 @@ window.openEditForm = async function(id) {
   document.getElementById('sidebar-edit-form').addEventListener('submit', async e => {
     e.preventDefault();
     const data = Object.fromEntries(new FormData(e.target));
+    data.anonymous = e.submitter?.value === '1' ? '1' : '0';
     try {
       const res = await fetch(`/wifi/${id}/edit`, { method: 'POST', headers: csrfHeaders({'Content-Type':'application/json'}), body: JSON.stringify(data) });
       const json = await res.json();
@@ -499,6 +510,78 @@ window.openEditForm = async function(id) {
     } catch(err) {
       showSnackbar('Erreur réseau');
     }
+  });
+};
+
+window.openAddModal = function(lat, lng) {
+  const modal = document.getElementById('wifi-modal');
+  const body = document.getElementById('wifi-modal-body');
+  const title = document.getElementById('wifi-modal-title');
+  modal.classList.remove('hidden');
+  title.textContent = 'Ajouter un réseau';
+  const faqUrl = (path) => `<a href="/faq/${path}" target="_blank" rel="noopener noreferrer" style="color:#60a5fa;text-decoration:none;font-weight:700;margin-left:0">?</a>`;
+  body.innerHTML = `
+    <form id="sidebar-add-form" class="detail-card">
+      <label class="ssid-label">SSID<span class="ssid-help">${faqUrl('ssid')}</span> *<input type="text" name="ssid" required></label>
+      <label class="ssid-label">Chiffrement<span class="ssid-help">${faqUrl('security')}</span> *
+        <select name="encryption" id="sidebar-add-enc">
+          <option value="open">Ouvert</option>
+          <option value="wpa2">WPA2</option>
+          <option value="wpa3">WPA3</option>
+          <option value="wep">WEP</option>
+        </select>
+      </label>
+      <label class="ssid-label" id="sidebar-add-pwd-field">Mot de passe<span class="ssid-help">${faqUrl('password')}</span><input type="text" name="password"></label>
+      <label class="ssid-label">Captive portal<span class="ssid-help">${faqUrl('captiveportal')}</span>
+        <select name="captive_portal"><option value="">•</option><option value="1">Oui</option><option value="0">Non</option></select>
+      </label>
+      <label class="ssid-label">FAI<span class="ssid-help">${faqUrl('isp')}</span>
+        <select name="isp"><option value="">•</option>${['Orange','Free','SFR','Bouygues','Autre'].map(v=>`<option>${v}</option>`).join('')}</select>
+      </label>
+      <label class="ssid-label">Lieu<span class="ssid-help">${faqUrl('location')}</span>
+        <select name="place_type"><option value="">•</option>${['Restaurant','Café','Bibliothèque','Hôtel','Gare','Aéroport','Autre'].map(v=>`<option>${v}</option>`).join('')}</select>
+      </label>
+      <label class="ssid-label">Horaires<span class="ssid-help">${faqUrl('hours')}</span><input type="text" name="hours" placeholder="Mo-Fr 08:00-20:00"></label>
+      <label class="ssid-label">Passerelle<span class="ssid-help">${faqUrl('gateway')}</span><input type="text" name="gateway"></label>
+      <label class="ssid-label">DHCP<span class="ssid-help">${faqUrl('dhcp')}</span><input type="text" name="dhcp_range"></label>
+      <label class="ssid-label">Débit ↓ (Mbps)<span class="ssid-help">${faqUrl('speedtest')}</span><input type="number" name="download_mbps" min="0" step="0.1"></label>
+      <label class="ssid-label">Débit ↑ (Mbps)<span class="ssid-help">${faqUrl('speedtest')}</span><input type="number" name="upload_mbps" min="0" step="0.1"></label>
+      <label class="ssid-label">Ping (ms)<span class="ssid-help">${faqUrl('speedtest')}</span><input type="number" name="ping_ms" min="0"></label>
+      <input type="hidden" name="lat" value="${lat}">
+      <input type="hidden" name="lng" value="${lng}">
+      <div style="display:flex;gap:.5rem;margin-top:.5rem">
+        <button type="submit" name="anonymous" value="0" class="btn-primary" style="flex:1;justify-content:center">Ajouter</button>
+        <button type="submit" name="anonymous" value="1" class="btn-secondary" style="flex:1;justify-content:center">👤 Anonyme</button>
+      </div>
+    </form>`;
+
+  const enc = document.getElementById('sidebar-add-enc');
+  const pwdField = document.getElementById('sidebar-add-pwd-field');
+  function togglePwd() {
+    const isOpen = enc.value === 'open';
+    pwdField.style.display = isOpen ? 'none' : '';
+    pwdField.querySelector('input').disabled = isOpen;
+  }
+  enc.addEventListener('change', togglePwd);
+  togglePwd();
+
+  document.getElementById('sidebar-add-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target));
+    data.anonymous = e.submitter?.value === '1' ? '1' : '0';
+    const r = await fetch('/wifi/add', { method: 'POST', headers: csrfHeaders({'Content-Type':'application/json'}), body: JSON.stringify(data) });
+    const json = await r.json();
+    if (r.status === 409 && json.duplicate) {
+      if (confirm(`Un réseau "${json.duplicate.ssid}" existe déjà à moins de 100m (#${json.duplicate.id}).\nAjouter quand même ?`)) {
+        const r2 = await fetch('/wifi/add', { method: 'POST', headers: csrfHeaders({'Content-Type':'application/json'}), body: JSON.stringify({ ...data, force: '1' }) });
+        const json2 = await r2.json();
+        if (r2.ok) { closeWifiModal(); loadWifi(); openWifiModal(json2.id); }
+        else showSnackbar(json2.error || 'Erreur');
+      }
+      return;
+    }
+    if (r.ok) { closeWifiModal(); loadWifi(); openWifiModal(json.id); }
+    else showSnackbar(json.error || 'Erreur lors de l\'ajout');
   });
 };
 
