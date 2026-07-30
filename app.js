@@ -3,7 +3,8 @@ const express = require('express');
 const helmet = require('helmet');
 const axios = require('axios');
 const session = require('express-session');
-const SQLiteStore = require('connect-sqlite3')(session);
+const BetterSqlite3Store = require('better-sqlite3-session-store')(session);
+const db_session = require('better-sqlite3')('sessions.db');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 
@@ -21,7 +22,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(session({
-  store: new SQLiteStore({ db: 'sessions.db' }),
+  store: new BetterSqlite3Store({ client: db_session }),
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
