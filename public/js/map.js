@@ -505,6 +505,18 @@ window.openEditForm = async function(id) {
   enc.addEventListener('change', togglePwd);
   togglePwd();
 
+  const form = document.getElementById('sidebar-edit-form');
+  const submitBtns = form.querySelectorAll('button[type="submit"]');
+  const initialData = new URLSearchParams(new FormData(form)).toString();
+
+  function checkChanged() {
+    const changed = new URLSearchParams(new FormData(form)).toString() !== initialData;
+    submitBtns.forEach(b => { b.disabled = !changed; b.style.opacity = changed ? '' : '.4'; b.style.cursor = changed ? '' : 'not-allowed'; });
+  }
+  checkChanged();
+  form.addEventListener('input', checkChanged);
+  form.addEventListener('change', checkChanged);
+
   document.getElementById('sidebar-edit-form').addEventListener('submit', async e => {
     e.preventDefault();
     const data = Object.fromEntries(new FormData(e.target));

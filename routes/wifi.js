@@ -96,14 +96,15 @@ router.get('/:id', (req, res) => {
   const wifi = db.prepare(`SELECT w.*, u.username as author_name FROM wifi_points w LEFT JOIN users u ON w.author_id = u.id WHERE w.id = ?`).get(req.params.id);
   if (!wifi) return res.status(404).send('Réseau introuvable');
   const votes = db.prepare(`SELECT type, download_mbps, upload_mbps, ping_ms, reason, comment, u.username, votes.created_at FROM votes JOIN users u ON votes.user_id = u.id WHERE wifi_id = ? ORDER BY votes.created_at DESC`).all(wifi.id);
+  const recentPerf = db.prepare(`SELECT download_mbps, upload_mbps, ping_ms FROM votes WHERE wifi_id = ? AND (download_mbps IS NOT NULL OR upload_mbps IS NOT NULL OR ping_ms IS NOT NULL) ORDER BY created_at DESC LIMIT 5`).all(wifi.id);
   const history = db.prepare(`SELECT h.action, h.snapshot, h.created_at, h.user_id, h.anonymous, CASE WHEN h.anonymous = 1 THEN NULL ELSE u.username END as username FROM wifi_history h JOIN users u ON h.user_id = u.id WHERE wifi_id = ? ORDER BY h.created_at DESC LIMIT 20`).all(wifi.id);
   const comments = db.prepare(`SELECT c.content, c.created_at, c.user_id, u.username FROM comments c JOIN users u ON c.user_id = u.id WHERE wifi_id = ? ORDER BY c.created_at DESC`).all(wifi.id);
   const verif_stats = db.prepare(`SELECT status, COUNT(*) as count FROM verifications WHERE wifi_id = ? GROUP BY status`).all(wifi.id);
   const works = verif_stats.find(v => v.status === 'works')?.count || 0;
   const broken = verif_stats.find(v => v.status === 'broken')?.count || 0;
-  const avgDown = votes.filter(v => v.download_mbps).map(v => v.download_mbps);
-  const avgUp = votes.filter(v => v.upload_mbps).map(v => v.upload_mbps);
-  const avgPing = votes.filter(v => v.ping_ms).map(v => v.ping_ms);
+  const avgDown = recentPerf.filter(v => v.download_mbps).map(v => v.download_mbps);
+  const avgUp = recentPerf.filter(v => v.upload_mbps).map(v => v.upload_mbps);
+  const avgPing = recentPerf.filter(v => v.ping_ms).map(v => v.ping_ms);
   const stats = {
     works, broken,
     avg_download: avgDown.length ? (avgDown.reduce((a, b) => a + b, 0) / avgDown.length).toFixed(1) : null,
@@ -133,6 +134,9 @@ router.post('/add', auth, (req, res) => {
   const result = db.prepare(`INSERT INTO wifi_points (ssid, password, encryption, captive_portal, gateway, dhcp_range, download_mbps, upload_mbps, ping_ms, isp, place_type, hours, lat, lng, author_id, anonymous, last_verified) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`)
     .run(ssid.trim(), password || null, encryption, captive_portal === 'on' || captive_portal === '1' ? 1 : 0, gateway || null, dhcp_range || null, optionalNumber(download_mbps), optionalNumber(upload_mbps), optionalNumber(ping_ms), isp || null, place_type || null, hours || null, parsedLat, parsedLng, req.session.user.id, anon);
   db.prepare(`INSERT INTO wifi_history (wifi_id, user_id, action, snapshot, anonymous) VALUES (?,?,?,?,?)`).run(result.lastInsertRowid, req.session.user.id, 'Réseau ajouté', JSON.stringify(req.body), anon);
+  if (optionalNumber(download_mbps) !== null || optionalNumber(upload_mbps) !== null || optionalNumber(ping_ms) !== null) {
+    db.prepare(`INSERT INTO votes (wifi_id, user_id, type, download_mbps, upload_mbps, ping_ms) VALUES (?,?,?,?,?,?)`).run(result.lastInsertRowid, req.session.user.id, 'up', optionalNumber(download_mbps), optionalNumber(upload_mbps), optionalNumber(ping_ms));
+  }
   const updated = addPoints(req.session.user.id, 10);
   req.session.user.points = updated.points;
   req.session.user.level = updated.level;
@@ -148,6 +152,9 @@ router.post('/:id/edit', auth, (req, res) => {
   if (!ssid || !encryption || parsedLat === null || parsedLng === null) return res.status(400).json({ error: 'Champs obligatoires invalides' });
   db.prepare(`UPDATE wifi_points SET ssid=?, password=?, encryption=?, captive_portal=?, gateway=?, dhcp_range=?, download_mbps=?, upload_mbps=?, ping_ms=?, isp=?, place_type=?, hours=?, lat=?, lng=? WHERE id=?`)
     .run(ssid.trim(), password || null, encryption, (captive_portal === 'on' || captive_portal === '1') ? 1 : 0, gateway || null, dhcp_range || null, optionalNumber(download_mbps), optionalNumber(upload_mbps), optionalNumber(ping_ms), isp || null, place_type || null, hours || null, parsedLat, parsedLng, wifi.id);
+  if (optionalNumber(download_mbps) !== null || optionalNumber(upload_mbps) !== null || optionalNumber(ping_ms) !== null) {
+    db.prepare(`INSERT INTO votes (wifi_id, user_id, type, download_mbps, upload_mbps, ping_ms) VALUES (?,?,?,?,?,?)`).run(wifi.id, req.session.user.id, 'up', optionalNumber(download_mbps), optionalNumber(upload_mbps), optionalNumber(ping_ms));
+  }
   const anonEdit = req.body.anonymous === '1' ? 1 : 0;
   db.prepare(`INSERT INTO wifi_history (wifi_id, user_id, action, snapshot, anonymous) VALUES (?,?,?,?,?)`).run(wifi.id, req.session.user.id, 'Informations modifiées', JSON.stringify({ before: wifi, after: req.body }), anonEdit);
   const score = computeScore(wifi.id);
