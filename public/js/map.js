@@ -334,7 +334,14 @@ window.openWifiModal = async function(id) {
   const body = document.getElementById('wifi-modal-body');
   const title = document.getElementById('wifi-modal-title');
   modal.classList.remove('hidden');
-  body.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--text-muted)">Chargement…</div>';
+  body.innerHTML = `
+    <div class="skeleton-body">
+      <div class="sk sk-bar" style="width:60%;height:14px;margin-bottom:.5rem"></div>
+      <div class="sk sk-bar" style="width:100%;height:8px;border-radius:99px;margin-bottom:1.25rem"></div>
+      <div class="sk sk-block" style="height:160px;margin-bottom:.75rem"></div>
+      <div class="sk sk-block" style="height:100px;margin-bottom:.75rem"></div>
+      <div class="sk sk-bar" style="width:40%;height:12px"></div>
+    </div>`;
   history.pushState({ wifiModal: id }, '', `/wifi/${id}`);
   try {
     const r = await fetch(`/wifi/${id}/json`);
@@ -430,7 +437,11 @@ function showSnackbar(msg) {
 window.openEditForm = async function(id) {
   const body = document.getElementById('wifi-modal-body');
   const title = document.getElementById('wifi-modal-title');
-  body.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--text-muted)">Chargement…</div>';
+  body.innerHTML = `
+    <div class="skeleton-body">
+      <div class="sk sk-bar" style="width:50%;height:13px;margin-bottom:1.5rem"></div>
+      <div class="sk sk-block" style="height:320px"></div>
+    </div>`;
   const r = await fetch(`/wifi/${id}/json`);
   const { wifi } = await r.json();
   title.textContent = '✏️ Modifier';

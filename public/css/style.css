@@ -1438,6 +1438,32 @@ code {
   margin-bottom: .75rem;
 }
 
+/* ── SKELETON ───────────────────────────────────────── */
+.skeleton-body {
+  padding: .25rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+
+.sk {
+  background: linear-gradient(90deg, var(--surface2) 25%, var(--surface3) 50%, var(--surface2) 75%);
+  background-size: 200% 100%;
+  animation: sk-shimmer 1.4s infinite;
+  border-radius: var(--radius);
+  flex-shrink: 0;
+}
+
+.sk-block {
+  width: 100%;
+  border-radius: var(--radius-lg);
+}
+
+@keyframes sk-shimmer {
+  0%   { background-position: 200% 0 }
+  100% { background-position: -200% 0 }
+}
+
 /* ── SCROLLBAR ──────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
