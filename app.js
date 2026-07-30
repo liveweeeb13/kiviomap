@@ -3,10 +3,10 @@ const express = require('express');
 const helmet = require('helmet');
 const axios = require('axios');
 const session = require('express-session');
-const BetterSqlite3Store = require('better-sqlite3-session-store')(session);
-const db_session = require('better-sqlite3')('sessions.db');
+const SQLiteStore = require('session-file-store')(session);
 const rateLimit = require('express-rate-limit');
 const path = require('path');
+const db = require('./db');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -22,7 +22,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(session({
-  store: new BetterSqlite3Store({ client: db_session }),
+  store: new SQLiteStore({ path: './sessions', ttl: 7 * 24 * 3600 }),
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
@@ -41,7 +41,6 @@ app.use((req, res, next) => {
 
 app.use(async (req, res, next) => {
   if (!req.session.user) return next();
-  const db = require('./db');
   const user = db.prepare('SELECT banned, session_version FROM users WHERE id = ?').get(req.session.user.id);
   if (!user || user.banned) {
     req.session.destroy(() => {});
@@ -95,13 +94,11 @@ function adminAuth(req, res, next) {
 }
 
 app.get('/admin/mail', adminAuth, (req, res) => {
-  const db = require('./db');
   const users = db.prepare('SELECT id, username, email FROM users WHERE banned = 0 ORDER BY username').all();
   res.render('admin-mail', { users });
 });
 
 app.post('/admin/mail', adminAuth, async (req, res) => {
-  const db = require('./db');
   const { recipients, subject, body } = req.body;
   const recipientList = Array.isArray(recipients) ? recipients : [recipients];
 
@@ -150,14 +147,12 @@ app.post('/admin/mail', adminAuth, async (req, res) => {
 });
 
 app.get('/admin', adminAuth, (req, res) => {
-  const db = require('./db');
   const users = db.prepare('SELECT id, username, email, points, level, role, banned FROM users ORDER BY id').all();
   const networks = db.prepare('SELECT id, ssid, lat, lng FROM wifi_points ORDER BY id').all();
   res.render('admin', { users, networks, success: req.query.success });
 });
 
 app.post('/admin/user/:id/ban', adminAuth, async (req, res) => {
-  const db = require('./db');
   const user = db.prepare('SELECT username, email FROM users WHERE id = ?').get(req.params.id);
   if (!user) return res.redirect('/admin');
   db.prepare('UPDATE users SET banned = 1, session_version = session_version + 1 WHERE id = ?').run(req.params.id);
@@ -204,7 +199,6 @@ app.post('/admin/user/:id/ban', adminAuth, async (req, res) => {
 });
 
 app.post('/admin/user/:id/unban', adminAuth, async (req, res) => {
-  const db = require('./db');
   const user = db.prepare('SELECT username, email FROM users WHERE id = ?').get(req.params.id);
   if (!user) return res.redirect('/admin');
   db.prepare('UPDATE users SET banned = 0 WHERE id = ?').run(req.params.id);
@@ -245,7 +239,6 @@ app.post('/admin/user/:id/unban', adminAuth, async (req, res) => {
 });
 
 app.post('/admin/network/:id/delete', adminAuth, (req, res) => {
-  const db = require('./db');
   db.prepare('DELETE FROM verifications WHERE wifi_id = ?').run(req.params.id);
   db.prepare('DELETE FROM votes WHERE wifi_id = ?').run(req.params.id);
   db.prepare('DELETE FROM comments WHERE wifi_id = ?').run(req.params.id);
@@ -255,8 +248,7 @@ app.post('/admin/network/:id/delete', adminAuth, (req, res) => {
 });
 
 app.post('/admin/user/:id', adminAuth, async (req, res) => {
-  const db = require('./db');
-  const bcrypt = require('bcrypt');
+  const bcrypt = require('bcryptjs');
   const { username, email, password, points, role } = req.body;
   const parsedPoints = Math.max(0, Number.parseInt(points, 10) || 0);
   const level = Math.min(100, Math.trunc(1 + Math.sqrt(parsedPoints / 10)));
@@ -341,4 +333,6 @@ app.post('/speedtest/upload', (req, res) => {
   res.json({ ok: true });
 });
 
-app.listen(2004, () => console.log('Kiviomap running on http://localhost:2004'));
+db.ready.then(() => {
+  app.listen(2004, () => console.log('Kiviomap running on http://localhost:2004'));
+}).catch(err => { console.error('DB init failed:', err); process.exit(1); });
