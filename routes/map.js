@@ -3,7 +3,11 @@ const router = express.Router();
 const db = require('../db');
 
 router.get('/', (req, res) => {
-  res.render('index');
+  res.render('index', {
+    pageTitle: 'Carte Wi-Fi collaborative',
+    pageDesc: 'Trouvez, ajoutez et vérifiez des réseaux Wi-Fi publics autour de vous.',
+    canonicalPath: '/'
+  });
 });
 
 router.get('/u/:id', (req, res) => {
@@ -40,13 +44,21 @@ router.get('/u/:id', (req, res) => {
     return { ...h, diffs };
   });
 
-  res.render('profile', { profile, wifiCount, verifCount, commentCount, history });
+  res.render('profile', { profile, wifiCount, verifCount, commentCount, history,
+    pageTitle: `Profil de ${profile.username}`,
+    pageDesc: `${profile.username} — Niveau ${profile.level} · ${wifiCount} réseaux ajoutés sur Kiviomap.`,
+    canonicalPath: `/u/${profile.id}`
+  });
 });
 
 router.get('/leaderboard', (req, res) => {
   const topPoints = db.prepare(`SELECT id, username, points, level FROM users ORDER BY points DESC LIMIT 20`).all();
   const topNetworks = db.prepare(`SELECT u.id, u.username, COUNT(w.id) as count FROM wifi_points w JOIN users u ON w.author_id = u.id GROUP BY u.id ORDER BY count DESC LIMIT 10`).all();
-  res.render('leaderboard', { topPoints, topNetworks });
+  res.render('leaderboard', { topPoints, topNetworks,
+    pageTitle: 'Classement',
+    pageDesc: 'Les meilleurs contributeurs de la carte Wi-Fi Kiviomap.',
+    canonicalPath: '/leaderboard'
+  });
 });
 
 router.get('/api/wifi', (req, res) => {

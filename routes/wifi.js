@@ -55,7 +55,10 @@ router.get('/add', (req, res) => {
   if (!req.session.user) return res.redirect('/auth/login');
   res.render('wifi-detail', {
     wifi: null, votes: [], history: [], comments: [], stats: {},
-    addLat: req.query.lat || '', addLng: req.query.lng || ''
+    addLat: req.query.lat || '', addLng: req.query.lng || '',
+    pageTitle: 'Ajouter un réseau',
+    pageDesc: 'Ajoutez un réseau Wi-Fi public sur la carte Kiviomap.',
+    canonicalPath: '/wifi/add'
   });
 });
 
@@ -67,7 +70,7 @@ router.get('/:id/json', (req, res) => {
   const verif_stats = db.prepare(`SELECT status, COUNT(*) as count FROM verifications WHERE wifi_id = ? GROUP BY status`).all(wifi.id);
   const works = verif_stats.find(v => v.status === 'works')?.count || 0;
   const broken = verif_stats.find(v => v.status === 'broken')?.count || 0;
-  const votes = db.prepare(`SELECT download_mbps, upload_mbps, ping_ms FROM votes WHERE wifi_id = ?`).all(wifi.id);
+  const votes = db.prepare(`SELECT download_mbps, upload_mbps, ping_ms FROM votes WHERE wifi_id = ? AND (download_mbps IS NOT NULL OR upload_mbps IS NOT NULL OR ping_ms IS NOT NULL) ORDER BY created_at DESC LIMIT 5`).all(wifi.id);
   const avgDown = votes.filter(v => v.download_mbps).map(v => v.download_mbps);
   const avgUp = votes.filter(v => v.upload_mbps).map(v => v.upload_mbps);
   const avgPing = votes.filter(v => v.ping_ms).map(v => v.ping_ms);
@@ -107,7 +110,11 @@ router.get('/:id', (req, res) => {
     avg_upload: avgUp.length ? (avgUp.reduce((a, b) => a + b, 0) / avgUp.length).toFixed(1) : null,
     avg_ping: avgPing.length ? (avgPing.reduce((a, b) => a + b, 0) / avgPing.length).toFixed(0) : null,
   };
-  res.render('wifi-detail', { wifi, votes, history, comments, stats });
+  res.render('wifi-detail', { wifi, votes, history, comments, stats,
+    pageTitle: `📶 ${wifi.ssid}`,
+    pageDesc: `Réseau Wi-Fi ${wifi.ssid}${wifi.place_type ? ` — ${wifi.place_type}` : ''}${wifi.isp ? ` (${wifi.isp})` : ''}. Score de confiance : ${wifi.confidence_score}%.`,
+    canonicalPath: `/wifi/${wifi.id}`
+  });
 });
 
 router.post('/add', auth, (req, res) => {

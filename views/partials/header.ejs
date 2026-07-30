@@ -3,7 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kiviomap • Carte Wi-Fi</title>
+  <title><%= typeof pageTitle !== 'undefined' ? pageTitle + ' • Kiviomap' : 'Kiviomap • Carte Wi-Fi collaborative' %></title>
+  <meta name="description" content="<%= typeof pageDesc !== 'undefined' ? pageDesc : 'Kiviomap est une carte Wi-Fi collaborative. Trouvez, ajoutez et vérifiez des réseaux Wi-Fi publics autour de vous.' %>">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="<%= typeof appUrl !== 'undefined' ? appUrl : '' %><%= typeof canonicalPath !== 'undefined' ? canonicalPath : '' %>">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Kiviomap">
+  <meta property="og:title" content="<%= typeof pageTitle !== 'undefined' ? pageTitle + ' • Kiviomap' : 'Kiviomap • Carte Wi-Fi collaborative' %>">
+  <meta property="og:description" content="<%= typeof pageDesc !== 'undefined' ? pageDesc : 'Kiviomap est une carte Wi-Fi collaborative. Trouvez, ajoutez et vérifiez des réseaux Wi-Fi publics autour de vous.' %>">
+  <meta property="og:image" content="<%= process.env.APP_URL || '' %>/img/logo.png">
+  <meta property="og:url" content="<%= process.env.APP_URL || '' %><%= typeof canonicalPath !== 'undefined' ? canonicalPath : '' %>">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="<%= typeof pageTitle !== 'undefined' ? pageTitle + ' • Kiviomap' : 'Kiviomap • Carte Wi-Fi collaborative' %>">
+  <meta name="twitter:description" content="<%= typeof pageDesc !== 'undefined' ? pageDesc : 'Kiviomap est une carte Wi-Fi collaborative. Trouvez, ajoutez et vérifiez des réseaux Wi-Fi publics autour de vous.' %>">
+  <meta name="twitter:image" content="<%= process.env.APP_URL || '' %>/img/logo.png">
   <link rel="icon" type="image/png" href="/img/logo.png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
