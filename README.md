@@ -1,6 +1,6 @@
-# [Kiviomap](https://kiviomap.io)
+# [Kiviomap](https://kiviomap.eu)
 
-https://kiviomap.io
+https://kiviomap.eu
 
 .env
 ```
