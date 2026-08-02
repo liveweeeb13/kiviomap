@@ -218,7 +218,7 @@ router.post('/forgot', async (req, res) => {
   const { email } = req.body;
   const user = db.prepare('SELECT id, username FROM users WHERE email = ?').get(email);
   // On renvoie toujours le meme message pour ne pas divulguer si l'email existe
-  const ok = { error: null, success: 'Cliques sur le lien envoyé par email.' };
+  const ok = { error: null, success: 'Si cet email est associé à un compte un mail a été envoyé' };
   if (!user) return res.render('forgot', ok);
 
   const token = crypto.randomBytes(32).toString('hex');
