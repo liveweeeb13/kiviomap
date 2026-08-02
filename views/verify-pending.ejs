@@ -1,35 +1,24 @@
 <%- include('partials/header') %>
 <div class="auth-page">
   <div class="auth-box">
-    <h1>Vérifie ton email</h1>
+    <h1><%= t.verify.title %></h1>
     <p class="auth-subtitle">On a envoyé un code à <strong><%= email %></strong></p>
     <% if (error) { %><div class="alert-error"><%= error %></div><% } %>
-    <% if (typeof resent !== 'undefined' && resent) { %><div class="alert-success">Un nouveau code a été envoyé.</div><% } %>
+    <% if (typeof resent !== 'undefined' && resent) { %><div class="alert-success"><%= t.verify.resent %></div><% } %>
     <form method="POST" action="/auth/verify-email">
-      <label>Code à 6 chiffres
-        <input
-          type="text"
-          name="code"
-          required
-          maxlength="6"
-          minlength="6"
-          pattern="[0-9]{6}"
-          inputmode="numeric"
-          autofocus
-          placeholder="000000"
-          style="text-align:center;font-size:28px;font-weight:700;letter-spacing:8px;"
-        >
+      <label><%= t.verify.code_label %>
+        <input type="text" name="code" required maxlength="6" minlength="6" pattern="[0-9]{6}" inputmode="numeric" autofocus placeholder="000000" style="text-align:center;font-size:28px;font-weight:700;letter-spacing:8px;">
       </label>
-      <button type="submit" class="btn-primary btn-full">Valider mon compte</button>
+      <button type="submit" class="btn-primary btn-full"><%= t.verify.submit %></button>
     </form>
     <form method="POST" action="/auth/resend-code" style="margin-top:10px">
       <button type="submit" id="resend-btn" class="btn-secondary btn-full" <% if (resendCooldown > 0) { %>disabled<% } %>>
-        <% if (resendCooldown > 0) { %>Renvoyer dans <span id="countdown"><%= resendCooldown %></span>s<% } else { %>Renvoyer le code<% } %>
+        <% if (resendCooldown > 0) { %><%= t.verify.resend_in %> <span id="countdown"><%= resendCooldown %></span>s<% } else { %><%= t.verify.resend %><% } %>
       </button>
     </form>
     <p class="auth-link" style="margin-top:16px;font-size:13px;color:#999;">
-      Le code expire dans 15 minutes.<br>
-      Mauvaise adresse ? <a href="/auth/register">Recommencer</a>
+      <%= t.verify.expires %><br>
+      <%= t.verify.wrong_email %> <a href="/auth/register"><%= t.verify.restart %></a>
     </p>
   </div>
 </div>
@@ -44,7 +33,7 @@
       if (seconds <= 0) {
         clearInterval(interval);
         btn.disabled = false;
-        btn.textContent = 'Renvoyer le code';
+        btn.textContent = '<%= t.verify.resend %>';
       } else {
         countdownEl.textContent = seconds;
       }

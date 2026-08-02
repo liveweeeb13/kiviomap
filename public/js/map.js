@@ -1,4 +1,45 @@
-let map, addMarker;
+const LANG = document.documentElement.lang || 'fr';
+const UI = {
+  open: LANG === 'fr' ? 'Ouvert' : 'Open',
+  see_details: LANG === 'fr' ? 'Voir les détails' : 'See details',
+  score: LANG === 'fr' ? 'Score' : 'Score',
+  enc_open: LANG === 'fr' ? 'Ouvert' : 'Open',
+  works: LANG === 'fr' ? 'Fonctionne' : 'Works',
+  broken: LANG === 'fr' ? 'Ne fonctionne plus' : 'Not working',
+  loading: LANG === 'fr' ? 'Chargement…' : 'Loading…',
+  load_error: LANG === 'fr' ? 'Erreur de chargement' : 'Loading error',
+  confidence: LANG === 'fr' ? 'Score de confiance' : 'Confidence score',
+  network: LANG === 'fr' ? 'Réseau' : 'Network',
+  perf: LANG === 'fr' ? 'Performances' : 'Performance',
+  down: LANG === 'fr' ? 'Descendant' : 'Download',
+  up: LANG === 'fr' ? 'Montant' : 'Upload',
+  confirmations: LANG === 'fr' ? 'Confirmations' : 'Confirmations',
+  reports: LANG === 'fr' ? 'Signalements' : 'Reports',
+  comments: LANG === 'fr' ? 'Commentaires' : 'Comments',
+  history: LANG === 'fr' ? 'Historique' : 'History',
+  added_by: LANG === 'fr' ? 'Ajouté par' : 'Added by',
+  added_anon: LANG === 'fr' ? 'Ajouté anonymement' : 'Added anonymously',
+  anonymous: LANG === 'fr' ? 'Anonyme' : 'Anonymous',
+  verified: LANG === 'fr' ? 'Vérifié le' : 'Verified on',
+  save: LANG === 'fr' ? 'Sauvegarder' : 'Save',
+  save_anon: LANG === 'fr' ? '👤 Anonyme' : '👤 Anonymous',
+  add: LANG === 'fr' ? 'Ajouter' : 'Add',
+  add_anon: LANG === 'fr' ? '👤 Anonyme' : '👤 Anonymous',
+  add_network: LANG === 'fr' ? 'Créer un réseau' : 'Add a network',
+  copy_coords: LANG === 'fr' ? 'Copier les coordonnées' : 'Copy coordinates',
+  copied: LANG === 'fr' ? '✅ Copié !' : '✅ Copied!',
+  cooldown: (h) => LANG === 'fr' ? `Cooldown actif, réessaye dans ${h}h` : `Cooldown active, retry in ${h}h`,
+  duplicate: (ssid, id) => LANG === 'fr' ? `Un réseau "${ssid}" existe déjà à moins de 100m (#${id}).\nAjouter quand même ?` : `A network "${ssid}" already exists within 100m (#${id}).\nAdd anyway?`,
+  err_add: LANG === 'fr' ? "Erreur lors de l'ajout" : 'Error adding network',
+  err_save: LANG === 'fr' ? 'Erreur lors de la sauvegarde' : 'Error saving',
+  err_net: LANG === 'fr' ? 'Erreur réseau' : 'Network error',
+  saved: LANG === 'fr' ? 'Modifications sauvegardées !' : 'Changes saved!',
+  edit: LANG === 'fr' ? '✏️ Modifier' : '✏️ Edit',
+  back: LANG === 'fr' ? '← Retour' : '← Back',
+  loc_fail: LANG === 'fr' ? 'Localisation échouée : ' : 'Location failed: ',
+  vpn_msg: LANG === 'fr' ? 'Par sécurité, utilisez un ' : 'For security, use a ',
+};
+
 const IS_LOGGED = document.body && document.body.dataset && document.body.dataset.isLogged === 'true';
 const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
@@ -91,8 +132,8 @@ document.addEventListener('DOMContentLoaded', () => {
         .setLatLng(e.latlng)
         .setContent(`
           <div style="display:flex;flex-direction:column;gap:.5rem;min-width:160px">
-            <a href="/wifi/add?lat=${lat}&lng=${lng}" class="btn-primary add-wifi-link" data-lat="${lat}" data-lng="${lng}" style="justify-content:center">Créer un réseau</a>
-            <button type="button" data-copy-coords="${lat.toFixed(6)}, ${lng.toFixed(6)}" class="btn-secondary copy-coords-btn" style="justify-content:center">Copier les coordonnées</button>
+            <a href="/wifi/add?lat=${lat}&lng=${lng}" class="btn-primary add-wifi-link" data-lat="${lat}" data-lng="${lng}" style="justify-content:center">${UI.add_network}</a>
+            <button type="button" data-copy-coords="${lat.toFixed(6)}, ${lng.toFixed(6)}" class="btn-secondary copy-coords-btn" style="justify-content:center">${UI.copy_coords}</button>
           </div>
         `)
         .openOn(map);
@@ -113,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
   map.on('locationerror', e => {
     const s = document.createElement('div');
     s.className = 'snackbar';
-    s.textContent = 'Localisation échouée : ' + e.message;
+    s.textContent = UI.loc_fail + e.message;
     document.body.appendChild(s);
     setTimeout(() => s.classList.add('snackbar-show'), 10);
     setTimeout(() => { s.classList.remove('snackbar-show'); setTimeout(() => s.remove(), 300); }, 4000);
@@ -170,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (copyButton) {
       const coords = copyButton.dataset.copyCoords;
       navigator.clipboard.writeText(coords).then(() => {
-        copyButton.textContent = '✅ Copié !';
+      copyButton.textContent = UI.copied;
       });
       return;
     }
@@ -227,11 +268,11 @@ window.loadWifi = async function () {
       layer.bindPopup(`
         <div class="popup-content">
           <strong>📶 ${p.ssid}</strong>
-          <div style="color:${color};font-weight:bold">Score : ${p.confidence_score}%</div>
+          <div style="color:${color};font-weight:bold">${UI.score} : ${p.confidence_score}%</div>
           <div>${p.encryption === 'open' ? '🔓' : '🔒'} ${fmtEncryption(p.encryption)}</div>
           ${p.place_type ? `<div>🏢 ${p.place_type}</div>` : ''}
           ${p.isp ? `<div>🌍 ${p.isp}</div>` : ''}
-          <a href="/wifi/${p.id}" class="btn-primary wifi-detail-link" data-id="${p.id}" style="margin-top:.5rem;display:inline-block">Voir les détails</a>
+          <a href="/wifi/${p.id}" class="btn-primary wifi-detail-link" data-id="${p.id}" style="margin-top:.5rem;display:inline-block">${UI.see_details}</a>
         </div>
       `);
     }
@@ -242,7 +283,7 @@ window.loadWifi = async function () {
 };
 
 function fmtEncryption(enc) {
-  return enc === 'open' ? 'Ouvert' : enc.toUpperCase();
+  return enc === 'open' ? UI.open : enc.toUpperCase();
 }
 
 function getMarkerStyle(score) {
@@ -352,9 +393,9 @@ window.openWifiModal = async function(id) {
     const scoreColor = wifi.confidence_score >= 80 ? '#2ecc71' : wifi.confidence_score >= 60 ? '#f1c40f' : wifi.confidence_score >= 35 ? '#e67e22' : '#e74c3c';
 
     const infoCard = `<div class="detail-card">
-      <h3>Réseau</h3>
-      <p>Chiffrement : <strong>${fmtEncryption(wifi.encryption)}</strong></p>
-      ${wifi.password ? `<p>Mot de passe : <code class="pwd-reveal">${escapeHtml(wifi.password)}</code></p>` : ''}
+      <h3>${UI.network}</h3>
+      <p>${UI.enc_open === wifi.encryption ? UI.open : wifi.encryption.toUpperCase()} : <strong>${fmtEncryption(wifi.encryption)}</strong></p>
+      ${wifi.password ? `<p>${UI.save} : <code class="pwd-reveal">${escapeHtml(wifi.password)}</code></p>` : ''}
       <p>Captive portal : <strong>${wifi.captive_portal ? 'Oui' : 'Non'}</strong></p>
       ${wifi.gateway ? `<p>Passerelle : <code>${escapeHtml(wifi.gateway)}</code></p>` : ''}
       ${wifi.dhcp_range ? `<p>DHCP : <code>${escapeHtml(wifi.dhcp_range)}</code></p>` : ''}
@@ -386,12 +427,12 @@ window.openWifiModal = async function(id) {
 
     body.innerHTML = `
       <div style="margin-bottom:1rem">
-        <div style="color:${scoreColor};font-size:.9rem">Score de confiance : <strong>${wifi.confidence_score}%</strong></div>
+        <div style="color:${scoreColor};font-size:.9rem">${UI.confidence} : <strong>${wifi.confidence_score}%</strong></div>
         <div class="progress-bar" style="margin-top:.4rem"><div class="progress-fill" style="width:${wifi.confidence_score}%;background:${scoreColor}"></div></div>
       </div>
       ${IS_LOGGED ? `<div style="display:flex;gap:.5rem;margin-bottom:.75rem">
-        <button class="btn-green verify-sidebar-btn" data-id="${wifi.id}" data-status="works" style="flex:1">Fonctionne</button>
-        <button class="btn-red verify-sidebar-btn" data-id="${wifi.id}" data-status="broken" style="flex:1">Ne fonctionne plus</button>
+        <button class="btn-green verify-sidebar-btn" data-id="${wifi.id}" data-status="works" style="flex:1">${UI.works}</button>
+        <button class="btn-red verify-sidebar-btn" data-id="${wifi.id}" data-status="broken" style="flex:1">${UI.broken}</button>
         <button class="btn-secondary sidebar-edit-btn" style="flex-shrink:0">✏️</button>
       </div>` : ''}
       ${infoCard}${perfCard}${commentsHtml}${historyHtml}`;
@@ -410,7 +451,7 @@ window.openWifiModal = async function(id) {
     const editBtn = body.querySelector('.sidebar-edit-btn');
     if (editBtn) editBtn.addEventListener('click', () => openEditForm(wifi.id));
   } catch(e) {
-    body.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--red)">Erreur de chargement</div>';
+    body.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--red)">' + UI.load_error + '</div>';
   }
 };
 
@@ -419,7 +460,7 @@ function showVpnToast() {
   const t = document.createElement('div');
   t.id = 'vpn-toast';
   t.style.cssText = 'position:fixed;top:4.5rem;left:50%;transform:translateX(-50%);background:var(--surface3);color:var(--text);border:1px solid var(--border2);border-radius:var(--radius);padding:.65rem 1.1rem;font-size:.82rem;z-index:3000;box-shadow:var(--shadow);display:flex;align-items:center;gap:.5rem;max-width:90vw;flex-wrap:wrap';
-  t.innerHTML = '🔒 Par sécurité, utilisez un <a href="https://protonvpn.com" target="_blank" rel="noopener noreferrer" style="color:var(--primary);text-decoration:none;font-weight:600">VPN</a>&nbsp;<button style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1rem;line-height:1;margin-left:.25rem" id="vpn-toast-close">✕</button>';
+  t.innerHTML = '🔒 ' + UI.vpn_msg + '<a href="https://protonvpn.com" target="_blank" rel="noopener noreferrer" style="color:var(--primary);text-decoration:none;font-weight:600">VPN</a>&nbsp;<button style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1rem;line-height:1;margin-left:.25rem" id="vpn-toast-close">✕</button>';
   document.body.appendChild(t);
   document.getElementById('vpn-toast-close').addEventListener('click', () => t.remove());
   setTimeout(() => t.remove(), 8000);

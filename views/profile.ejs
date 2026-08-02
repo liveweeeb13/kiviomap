@@ -3,19 +3,19 @@
   <div class="detail-card faq-card" style="margin-bottom:1rem">
     <div class="faq-hero">
       <div>
-        <p class="faq-kicker">Profil public</p>
+        <p class="faq-kicker"><%= t.profile.kicker %></p>
         <h1><%= profile.username %></h1>
-        <p class="faq-intro">Niveau <%= profile.level %> &nbsp;·&nbsp; Membre depuis <%= new Date(profile.created_at).toLocaleDateString('fr-FR') %></p>
+        <p class="faq-intro"><%= t.profile.level %> <%= profile.level %> &nbsp;·&nbsp; <%= t.profile.member_since %> <%= new Date(profile.created_at).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-GB') %></p>
       </div>
-      <% if (user && user.id === profile.id) { %><a href="/account/settings" class="faq-link">Paramètres</a><% } %>
+      <% if (user && user.id === profile.id) { %><a href="/account/settings" class="faq-link"><%= t.profile.settings %></a><% } %>
     </div>
     <div class="faq-grid">
       <div class="faq-box">
-        <h3>Points</h3>
+        <h3><%= t.profile.points %></h3>
         <p style="font-size:2rem;font-weight:800;color:var(--primary);margin:0"><%= profile.points %></p>
       </div>
       <div class="faq-box">
-        <h3>Niveau</h3>
+        <h3><%= t.profile.level %></h3>
         <p style="font-size:2rem;font-weight:800;color:var(--text);margin:0"><%= profile.level %></p>
         <% const nextLevelPoints = (profile.level) * (profile.level) * 10; const prevLevelPoints = (profile.level - 1) * (profile.level - 1) * 10; const progress = Math.min(100, Math.round((profile.points - prevLevelPoints) / (nextLevelPoints - prevLevelPoints) * 100)); %>
         <div style="margin-top:.6rem;background:var(--border,#e0d6cc);border-radius:99px;height:8px;overflow:hidden">
@@ -24,24 +24,23 @@
         <p style="font-size:.75rem;color:var(--muted,#999);margin:.3rem 0 0"><%= profile.points %> / <%= nextLevelPoints %> pts</p>
       </div>
       <div class="faq-box">
-        <h3>Réseaux ajoutés</h3>
+        <h3><%= t.profile.networks %></h3>
         <p style="font-size:2rem;font-weight:800;color:var(--text);margin:0"><%= wifiCount %></p>
       </div>
       <div class="faq-box">
-        <h3>Vérifications</h3>
+        <h3><%= t.profile.verifications %></h3>
         <p style="font-size:2rem;font-weight:800;color:var(--text);margin:0"><%= verifCount %></p>
       </div>
       <div class="faq-box">
-        <h3>Commentaires</h3>
+        <h3><%= t.profile.comments %></h3>
         <p style="font-size:2rem;font-weight:800;color:var(--text);margin:0"><%= commentCount %></p>
       </div>
     </div>
   </div>
 
-
   <% if (history.length) { %>
   <div class="detail-card" style="margin-top:1rem">
-    <h3>Historique d'activité</h3>
+    <h3><%= t.profile.activity %></h3>
     <ul class="history-list" id="profile-history-list" style="margin-top:.75rem">
       <% history.forEach(h => { %>
       <%
@@ -58,7 +57,7 @@
               <a href="/wifi/<%= h.wifi_id %>" style="color:var(--primary);text-decoration:none;font-weight:600">📶 <%= h.ssid %></a>
               <span class="history-action"><%= h.action %></span>
             </div>
-            <small><%= new Date(h.created_at).toLocaleDateString('fr-FR') %></small>
+            <small><%= new Date(h.created_at).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-GB') %></small>
           </div>
           <% if (h.diffs && h.diffs.length) { %>
           <div class="history-diff">
@@ -81,7 +80,7 @@
   </div>
   <% } %>
 
-  <a href="javascript:history.back()" class="btn-secondary back-link" style="margin-top:1.5rem;display:inline-block">← Retour</a>
+  <a href="javascript:history.back()" class="btn-secondary back-link" style="margin-top:1.5rem;display:inline-block"><%= t.profile.back %></a>
 
 <script>
   (function() {

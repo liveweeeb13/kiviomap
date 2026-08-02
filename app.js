@@ -3,6 +3,17 @@ const fs = require('fs');
 const express = require('express');
 if (!fs.existsSync('./sessions')) fs.mkdirSync('./sessions');
 
+const locales = {
+  fr: require('./locales/fr.json'),
+  en: require('./locales/en.json'),
+};
+
+function detectLang(req) {
+  if (req.session?.lang) return req.session.lang;
+  const accept = req.headers['accept-language'] || '';
+  return accept.toLowerCase().startsWith('fr') ? 'fr' : 'en';
+}
+
 const helmet = require('helmet');
 const axios = require('axios');
 const session = require('express-session');
@@ -39,7 +50,16 @@ app.use(session({
 
 app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
+  const lang = detectLang(req);
+  res.locals.lang = lang;
+  res.locals.t = locales[lang];
   next();
+});
+
+app.get('/lang/:code', (req, res) => {
+  const code = req.params.code;
+  if (locales[code]) req.session.lang = code;
+  res.redirect(req.headers.referer || '/');
 });
 
 app.use(async (req, res, next) => {
