@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const router = express.Router();
 const db = require('../db');
 
@@ -131,16 +132,17 @@ router.post('/add', auth, (req, res) => {
   }
 
   const anon = req.body.anonymous === '1' ? 1 : 0;
-  const result = db.prepare(`INSERT INTO wifi_points (ssid, password, encryption, captive_portal, gateway, dhcp_range, download_mbps, upload_mbps, ping_ms, isp, place_type, hours, lat, lng, author_id, anonymous, last_verified) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`)
-    .run(ssid.trim(), password || null, encryption, captive_portal === 'on' || captive_portal === '1' ? 1 : 0, gateway || null, dhcp_range || null, optionalNumber(download_mbps), optionalNumber(upload_mbps), optionalNumber(ping_ms), isp || null, place_type || null, hours || null, parsedLat, parsedLng, req.session.user.id, anon);
-  db.prepare(`INSERT INTO wifi_history (wifi_id, user_id, action, snapshot, anonymous) VALUES (?,?,?,?,?)`).run(result.lastInsertRowid, req.session.user.id, 'Réseau ajouté', JSON.stringify(req.body), anon);
+  const wifiId = crypto.randomUUID();
+  db.prepare(`INSERT INTO wifi_points (id, ssid, password, encryption, captive_portal, gateway, dhcp_range, download_mbps, upload_mbps, ping_ms, isp, place_type, hours, lat, lng, author_id, anonymous, last_verified) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`)
+    .run(wifiId, ssid.trim(), password || null, encryption, captive_portal === 'on' || captive_portal === '1' ? 1 : 0, gateway || null, dhcp_range || null, optionalNumber(download_mbps), optionalNumber(upload_mbps), optionalNumber(ping_ms), isp || null, place_type || null, hours || null, parsedLat, parsedLng, req.session.user.id, anon);
+  db.prepare(`INSERT INTO wifi_history (wifi_id, user_id, action, snapshot, anonymous) VALUES (?,?,?,?,?)`).run(wifiId, req.session.user.id, '📶 Réseau ajouté', JSON.stringify(req.body), anon);
   if (optionalNumber(download_mbps) !== null || optionalNumber(upload_mbps) !== null || optionalNumber(ping_ms) !== null) {
-    db.prepare(`INSERT INTO votes (wifi_id, user_id, type, download_mbps, upload_mbps, ping_ms) VALUES (?,?,?,?,?,?)`).run(result.lastInsertRowid, req.session.user.id, 'up', optionalNumber(download_mbps), optionalNumber(upload_mbps), optionalNumber(ping_ms));
+    db.prepare(`INSERT INTO votes (wifi_id, user_id, type, download_mbps, upload_mbps, ping_ms) VALUES (?,?,?,?,?,?)`).run(wifiId, req.session.user.id, 'up', optionalNumber(download_mbps), optionalNumber(upload_mbps), optionalNumber(ping_ms));
   }
   const updated = addPoints(req.session.user.id, 10);
   req.session.user.points = updated.points;
   req.session.user.level = updated.level;
-  res.json({ id: result.lastInsertRowid });
+  res.json({ id: wifiId });
 });
 
 router.post('/:id/edit', auth, (req, res) => {
@@ -156,7 +158,7 @@ router.post('/:id/edit', auth, (req, res) => {
     db.prepare(`INSERT INTO votes (wifi_id, user_id, type, download_mbps, upload_mbps, ping_ms) VALUES (?,?,?,?,?,?)`).run(wifi.id, req.session.user.id, 'up', optionalNumber(download_mbps), optionalNumber(upload_mbps), optionalNumber(ping_ms));
   }
   const anonEdit = req.body.anonymous === '1' ? 1 : 0;
-  db.prepare(`INSERT INTO wifi_history (wifi_id, user_id, action, snapshot, anonymous) VALUES (?,?,?,?,?)`).run(wifi.id, req.session.user.id, 'Informations modifiées', JSON.stringify({ before: wifi, after: req.body }), anonEdit);
+  db.prepare(`INSERT INTO wifi_history (wifi_id, user_id, action, snapshot, anonymous) VALUES (?,?,?,?,?)`).run(wifi.id, req.session.user.id, '✏️ Informations modifiées', JSON.stringify({ before: wifi, after: req.body }), anonEdit);
   const score = computeScore(wifi.id);
   db.prepare(`UPDATE wifi_points SET confidence_score = ? WHERE id = ?`).run(score, wifi.id);
   const updated = addPoints(req.session.user.id, 5);

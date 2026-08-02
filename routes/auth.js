@@ -139,10 +139,11 @@ router.post('/verify-email', async (req, res) => {
     return res.render('verify-pending', { email, error: 'Code incorrect, réessaie.', resent: false, resendCooldown });
   }
 
-  const result = db.prepare('INSERT INTO users (username, email, password, email_verified) VALUES (?, ?, ?, 1)').run(pending.username, email, pending.password);
+  const userId = crypto.randomUUID();
+  db.prepare('INSERT INTO users (id, username, email, password, email_verified) VALUES (?, ?, ?, ?, 1)').run(userId, pending.username, email, pending.password);
   db.prepare('DELETE FROM email_verifications WHERE email = ?').run(email);
   req.session.pendingEmail = null;
-  req.session.user = { id: result.lastInsertRowid, username: pending.username, points: 0, level: 1, role: 'member', session_version: 0 };
+  req.session.user = { id: userId, username: pending.username, points: 0, level: 1, role: 'member', session_version: 0 };
   res.redirect('/');
 });
 

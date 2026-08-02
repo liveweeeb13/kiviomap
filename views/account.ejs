@@ -3,32 +3,30 @@
   <div class="detail-card faq-card">
     <div class="faq-hero">
       <div>
-        <p class="faq-kicker">Mon compte</p>
+        <p class="faq-kicker"><%= t.account.kicker %></p>
         <h1><%= user.username %></h1>
-        <p class="faq-intro">Niveau <%= user.level %> &nbsp;·&nbsp; <%= user.points %> points</p>
+        <p class="faq-intro"><%= t.account.level %> <%= user.level %> &nbsp;·&nbsp; <%= user.points %> pts</p>
       </div>
-      <a href="/account/settings" class="faq-link">Paramètres</a>
+      <a href="/account/settings" class="faq-link"><%= t.nav.settings %></a>
     </div>
-
     <div class="faq-grid">
       <div class="faq-box">
-        <h3>Points</h3>
+        <h3><%= t.account.points %></h3>
         <p style="font-size:2rem;font-weight:800;color:var(--primary);margin:0"><%= user.points %></p>
       </div>
       <div class="faq-box">
-        <h3>Niveau</h3>
+        <h3><%= t.account.level %></h3>
         <p style="font-size:2rem;font-weight:800;color:var(--text);margin:0"><%= user.level %></p>
       </div>
       <div class="faq-box">
-        <h3>Rôle</h3>
+        <h3><%= t.account.role %></h3>
         <p style="font-size:1.1rem;font-weight:700;color:var(--text-soft);margin:0;text-transform:capitalize"><%= user.role %></p>
       </div>
     </div>
-
     <div style="margin-top:1rem;display:flex;gap:1rem;flex-wrap:wrap;">
-      <a href="javascript:history.back()" class="faq-link back-link">← Retour</a>
+      <a href="javascript:history.back()" class="faq-link back-link"><%= t.account.back %></a>
       <form action="/auth/logout" method="POST" style="display:inline">
-        <button type="submit" class="faq-link" style="background:none;border:1px solid rgba(255,255,255,.1);cursor:pointer;font-family:inherit;font-size:inherit;color:var(--text);">Déconnexion</button>
+        <button type="submit" class="faq-link" style="background:none;border:1px solid rgba(255,255,255,.1);cursor:pointer;font-family:inherit;font-size:inherit;color:var(--text);"><%= t.account.logout %></button>
       </form>
     </div>
   </div>

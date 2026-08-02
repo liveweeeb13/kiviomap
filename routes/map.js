@@ -41,7 +41,12 @@ router.get('/u/:id', (req, res) => {
         }).filter(Boolean);
       }
     } catch(e) {}
-    return { ...h, diffs };
+    const actionMap = {
+      'fr': { '📶 Réseau ajouté': '📶 Réseau ajouté', '✏️ Informations modifiées': '✏️ Informations modifiées', '✅ Fonctionne': '✅ Fonctionne', '❌ Ne fonctionne plus': '❌ Ne fonctionne plus' },
+      'en': { '📶 Réseau ajouté': '📶 Network added', '✏️ Informations modifiées': '✏️ Information updated', '✅ Fonctionne': '✅ Works', '❌ Ne fonctionne plus': '❌ Not working' }
+    };
+    const action = (actionMap[res.locals.lang] || actionMap['fr'])[h.action] || h.action;
+    return { ...h, diffs, action };
   });
 
   res.render('profile', { profile, wifiCount, verifCount, commentCount, history,

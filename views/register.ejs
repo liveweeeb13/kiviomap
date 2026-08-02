@@ -1,25 +1,25 @@
 <%- include('partials/header') %>
 <div class="auth-page">
   <div class="auth-box">
-    <h1>Créer un compte</h1>
-    <p class="auth-subtitle">Rejoignez la communauté Kiviomap</p>
+    <h1><%= t.register.title %></h1>
+    <p class="auth-subtitle"><%= t.register.subtitle %></p>
     <% if (error) { %><div class="alert-error"><%= error %></div><% } %>
     <form method="POST" action="/auth/register">
-      <label>Pseudo<input type="text" name="username" required minlength="3" autofocus placeholder="votre_pseudo"></label>
-      <label>Email<input type="email" name="email" required placeholder="vous@exemple.com"></label>
-      <label>Mot de passe<input type="password" name="password" required minlength="6" placeholder="6 caractères minimum"></label>
-      <label>Confirmer le mot de passe<input type="password" name="confirm_password" required placeholder="••••••••"></label>
+      <label><%= t.register.username %><input type="text" name="username" required minlength="3" autofocus placeholder="votre_pseudo"></label>
+      <label><%= t.register.email %><input type="email" name="email" required placeholder="vous@exemple.com"></label>
+      <label><%= t.register.password %><input type="password" name="password" required minlength="6" placeholder="6 caractères minimum"></label>
+      <label><%= t.register.confirm_password %><input type="password" name="confirm_password" required placeholder="••••••••"></label>
       <label class="terms-check">
         <input type="checkbox" name="accept_terms" required>
-        <span>J'ai lu et j'accepte les <a href="/terms" class="auth-link-inline">conditions d'utilisation</a></span>
+        <span><%= t.register.accept_terms %> <a href="/terms" class="auth-link-inline"><%= t.register.terms_link %></a></span>
       </label>
       <label class="terms-check">
         <input type="checkbox" name="accept_privacy" required>
-        <span>J'ai lu et j'accepte la <a href="/privacy" class="auth-link-inline">politique de confidentialité</a></span>
+        <span><%= t.register.accept_privacy %> <a href="/privacy" class="auth-link-inline"><%= t.register.privacy_link %></a></span>
       </label>
-      <button type="submit" class="btn-primary btn-full">Créer mon compte</button>
+      <button type="submit" class="btn-primary btn-full"><%= t.register.submit %></button>
     </form>
-    <p class="auth-link">Déjà un compte ? <a href="/auth/login">Se connecter</a></p>
+    <p class="auth-link"><%= t.register.already_account %> <a href="/auth/login"><%= t.register.login_link %></a></p>
   </div>
 </div>
 <%- include('partials/footer') %>

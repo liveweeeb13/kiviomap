@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="<%= lang || 'fr' %>">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -35,16 +35,17 @@
 <nav class="navbar">
   <a class="nav-brand" href="/">Kiviomap</a>
   <div class="nav-links">
-    <a href="/leaderboard">Classement</a>
+    <a href="/leaderboard"><%= t.nav.leaderboard %></a>
     <% if (user) { %>
-      <% if (user.role === 'admin') { %><a href="/admin" class="btn-primary">Admin</a><% } %>
+      <% if (user.role === 'admin') { %><a href="/admin" class="btn-primary"><%= t.nav.admin %></a><% } %>
       <a href="/u/<%= user.id %>" class="user-badge" style="text-decoration:none;cursor:pointer;">
         <%= user.username %>
         <small><%= user.points %> pts</small>
       </a>
     <% } else { %>
-      <a href="/auth/login">Connexion</a>
-      <a href="/auth/register" class="btn-primary">S'inscrire</a>
+      <a href="/auth/login"><%= t.nav.login %></a>
+      <a href="/auth/register" class="btn-primary"><%= t.nav.register %></a>
     <% } %>
-  </div>
+    <!-- <a href="/lang/<%= lang === 'fr' ? 'en' : 'fr' %>" title="Switch language" style="font-size:1.3rem;text-decoration:none;line-height:1"><%= lang === 'fr' ? '🇫🇷' : '🇬🇧' %></a>
+    --> </div>
 </nav>

@@ -741,7 +741,7 @@ body {
 }
 
 /* ── DETAIL PAGE ────────────────────────────────────── */
-.detail-page { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+.detail-page { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
 
 .detail-header { margin-bottom: 1.75rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
 .detail-header h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -.5px; margin-bottom: .75rem; }
@@ -962,11 +962,30 @@ code {
 
 /* ── ADMIN TABLE ────────────────────────────────────── */
 .admin-table-card {
+  background: var(--surface);
+  padding: 0;
+}
+
+.admin-table-wrapper {
+  display: block;
+  width: 100%;
   overflow-x: auto;
+  overflow-y: auto;
+  max-height: 72vh;
+  min-height: 28rem;
+  padding: 1rem;
+  box-sizing: border-box;
   -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
 }
 
 .admin-table {
+  width: max(100%, 820px);
+  min-width: 820px;
+  border-collapse: collapse;
+  font-size: .875rem;
+  background: transparent;
+}
   width: 100%;
   min-width: 640px;
   border-collapse: collapse;
@@ -1291,8 +1310,12 @@ code {
   }
   .admin-table-card {
     padding: .75rem;
-    overflow-x: auto;
+    overflow: auto;
     scrollbar-gutter: stable;
+  }
+  #tab-users.admin-table-card {
+    min-height: 20rem;
+    max-height: 60vh;
   }
   #tab-users .admin-table {
     min-width: 680px;
