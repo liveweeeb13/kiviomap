@@ -71,12 +71,24 @@ router.get('/api/wifi', (req, res) => {
     SELECT
       w.id,
       w.ssid,
+      w.password,
       w.encryption,
+      w.captive_portal,
+      w.gateway,
+      w.dhcp_range,
+      w.hours,
+      w.download_mbps,
+      w.upload_mbps,
+      w.ping_ms,
       w.place_type,
       w.isp,
       w.lat,
       w.lng,
       w.confidence_score,
+      w.last_verified,
+      w.created_at,
+      w.anonymous,
+      w.author_id,
       u.username as author_name
     FROM wifi_points w
     LEFT JOIN users u ON w.author_id = u.id

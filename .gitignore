@@ -9,6 +9,4 @@ prod/
 
 .env
 
-public/sw.js
-
 sessions/*

@@ -27,7 +27,10 @@ app.set('trust proxy', 1);
 
 if (!process.env.SESSION_SECRET) throw new Error('SESSION_SECRET manquant dans .env');
 
-app.use(helmet({ contentSecurityPolicy: false }));
+app.use(helmet({
+  contentSecurityPolicy: false,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
+}));
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));

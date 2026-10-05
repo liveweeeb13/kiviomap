@@ -1,3 +1,9 @@
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(err => {
+    console.warn('[SW] Enregistrement échoué:', err);
+  });
+}
+
 const LANG = document.documentElement.lang || 'fr';
 const UI = {
   open: LANG === 'fr' ? 'Ouvert' : 'Open',
@@ -10,6 +16,7 @@ const UI = {
   load_error: LANG === 'fr' ? 'Erreur de chargement' : 'Loading error',
   confidence: LANG === 'fr' ? 'Score de confiance' : 'Confidence score',
   network: LANG === 'fr' ? 'Réseau' : 'Network',
+  password: LANG === 'fr' ? 'Mot de passe' : 'Password',
   perf: LANG === 'fr' ? 'Performances' : 'Performance',
   down: LANG === 'fr' ? 'Descendant' : 'Download',
   up: LANG === 'fr' ? 'Montant' : 'Upload',
@@ -58,9 +65,11 @@ function csrfHeaders(extra = {}) {
 
 document.addEventListener('DOMContentLoaded', () => {
   map = L.map('map', { maxZoom: 19 }).setView([48.8566, 2.3522], 13);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    maxZoom: 19
+    maxZoom: 19,
+    referrerPolicy: 'strict-origin-when-cross-origin',
+    crossOrigin: true
   }).addTo(map);
 
   // Restaure la position depuis le hash ou le localStorage
@@ -83,9 +92,9 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('mapView', JSON.stringify({ lat: c.lat, lng: c.lng, zoom: z }));
   });
 
-  // Si l'URL est /wifi/:id (ex: après actualisation), ouvrir le modal sur PC
-  const wifiMatch = location.pathname.match(/^\/wifi\/(\d+)$/);
-  if (wifiMatch && window.innerWidth >= 768) {
+  // Si l'URL est /wifi/:id (ex: après actualisation), ouvrir le modal
+  const wifiMatch = location.pathname.match(/^\/wifi\/([^\/]+)$/);
+  if (wifiMatch) {
     loadWifi().then(() => openWifiModal(wifiMatch[1]));
   } else {
     loadWifi();
@@ -190,9 +199,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.addEventListener('click', e => {
-    // Modal wifi sur PC
+    // Modal wifi (PC et mobile)
     const detailLink = e.target.closest('.wifi-detail-link');
-    if (detailLink && window.innerWidth >= 768) {
+    if (detailLink) {
       e.preventDefault();
       const id = detailLink.dataset.id;
       openWifiModal(id);
@@ -233,9 +242,106 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+function updateOfflineBanner(isOffline, count) {
+  let banner = document.getElementById('offline-banner');
+  if (isOffline) {
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'offline-banner';
+      banner.style.cssText = 'position:fixed;bottom:1.25rem;left:50%;transform:translateX(-50%);background:var(--surface3);color:var(--text);border:1px solid var(--border2);border-radius:var(--radius);padding:.55rem 1.1rem;font-size:.82rem;z-index:3000;box-shadow:var(--shadow);display:flex;align-items:center;gap:.6rem;max-width:92vw;font-weight:500;';
+      document.body.appendChild(banner);
+    }
+    const backupTime = localStorage.getItem('kiviomap_wifi_backup_time');
+    let timeStr = '';
+    if (backupTime) {
+      const d = new Date(backupTime);
+      timeStr = ` (${d.toLocaleDateString(LANG === 'fr' ? 'fr-FR' : 'en-GB')} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`;
+    }
+    const countStr = count ? ` — ${count} ${LANG === 'fr' ? 'réseaux disponibles' : 'networks available'}` : '';
+    banner.innerHTML = `📡 <span>${LANG === 'fr' ? 'Mode hors-ligne' : 'Offline mode'}${countStr}${timeStr}</span>`;
+  } else if (banner) {
+    banner.innerHTML = `🟢 <span>${LANG === 'fr' ? 'Connexion rétablie — Données à jour' : 'Connection restored — Up to date'}</span>`;
+    banner.style.borderColor = 'var(--green)';
+    setTimeout(() => { if (banner) banner.remove(); }, 3500);
+  }
+}
+
+// Pré-télécharge les tuiles OSM autour des points pour les avoir en cache hors-ligne
+function preloadTilesAroundPoints(features) {
+  if (!('caches' in window) || !navigator.onLine || !features || !features.length) return;
+  const urls = new Set();
+  const zooms = [13, 14, 15, 16, 17];
+  features.slice(0, 50).forEach(f => {
+    if (!f.geometry || !f.geometry.coordinates) return;
+    const [lng, lat] = f.geometry.coordinates;
+    zooms.forEach(z => {
+      const x = Math.floor((lng + 180) / 360 * Math.pow(2, z));
+      const y = Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, z));
+      urls.add(`https://tile.openstreetmap.org/${z}/${x}/${y}.png`);
+      if (z >= 15) {
+        urls.add(`https://tile.openstreetmap.org/${z}/${x+1}/${y}.png`);
+        urls.add(`https://tile.openstreetmap.org/${z}/${x-1}/${y}.png`);
+        urls.add(`https://tile.openstreetmap.org/${z}/${x+1}/${y+1}.png`);
+        urls.add(`https://tile.openstreetmap.org/${z}/${x-1}/${y-1}.png`);
+      }
+    });
+  });
+
+  let delay = 0;
+  urls.forEach(url => {
+    setTimeout(() => {
+      fetch(url, { mode: 'cors' }).catch(() => {});
+    }, delay);
+    delay += 35;
+  });
+}
+
+window.addEventListener('online', () => {
+  updateOfflineBanner(false);
+  window.loadWifi();
+});
+window.addEventListener('offline', () => {
+  updateOfflineBanner(true);
+});
+
 window.loadWifi = async function () {
-  const r = await fetch('/api/wifi');
-  const geojson = await r.json();
+  let geojson = null;
+  if (navigator.onLine) {
+    try {
+      const r = await fetch('/api/wifi');
+      if (r.ok) {
+        const data = await r.json();
+        if (data && data.features) {
+          geojson = data;
+          try {
+            localStorage.setItem('kiviomap_wifi_backup', JSON.stringify(geojson));
+            localStorage.setItem('kiviomap_wifi_backup_time', new Date().toISOString());
+          } catch (e) {}
+        }
+      }
+    } catch (err) {
+      console.warn('[Kiviomap] Réseau inaccessible pour /api/wifi:', err);
+    }
+  }
+
+  // Si pas de données du réseau ou hors-ligne, charger la dernière sauvegarde depuis le localStorage
+  if (!geojson) {
+    try {
+      const saved = localStorage.getItem('kiviomap_wifi_backup');
+      if (saved) {
+        geojson = JSON.parse(saved);
+        updateOfflineBanner(true, geojson.features?.length);
+      }
+    } catch (e) {}
+  } else if (!navigator.onLine) {
+    updateOfflineBanner(true, geojson.features?.length);
+  }
+
+  if (!geojson || !geojson.features) return;
+
+  window._cachedWifiPoints = geojson.features.map(f => f.properties);
+  preloadTilesAroundPoints(geojson.features);
+
   if (window._wifiLayer) map.removeLayer(window._wifiLayer);
 
   const cluster = L.markerClusterGroup({
@@ -265,13 +371,17 @@ window.loadWifi = async function () {
     onEachFeature: (feature, layer) => {
       const p = feature.properties;
       const { color } = getMarkerStyle(parseFloat(p.confidence_score));
+      const pwdBadge = p.password ? `<div style="margin-top:.35rem;font-size:.82rem">🔑 <strong>Mot de passe :</strong> <code class="pwd-reveal">${escapeHtml(p.password)}</code></div>` : '';
+      const gwBadge = p.gateway ? `<div style="margin-top:.2rem;font-size:.82rem">🌐 <strong>Passerelle :</strong> <code>${escapeHtml(p.gateway)}</code></div>` : '';
       layer.bindPopup(`
         <div class="popup-content">
-          <strong>📶 ${p.ssid}</strong>
+          <strong>📶 ${escapeHtml(p.ssid)}</strong>
           <div style="color:${color};font-weight:bold">${UI.score} : ${p.confidence_score}%</div>
           <div>${p.encryption === 'open' ? '🔓' : '🔒'} ${fmtEncryption(p.encryption)}</div>
-          ${p.place_type ? `<div>🏢 ${p.place_type}</div>` : ''}
-          ${p.isp ? `<div>🌍 ${p.isp}</div>` : ''}
+          ${pwdBadge}
+          ${gwBadge}
+          ${p.place_type ? `<div>🏢 ${escapeHtml(p.place_type)}</div>` : ''}
+          ${p.isp ? `<div>🌍 ${escapeHtml(p.isp)}</div>` : ''}
           <a href="/wifi/${p.id}" class="btn-primary wifi-detail-link" data-id="${p.id}" style="margin-top:.5rem;display:inline-block">${UI.see_details}</a>
         </div>
       `);
@@ -385,25 +495,51 @@ window.openWifiModal = async function(id) {
     </div>`;
   history.pushState({ wifiModal: id }, '', `/wifi/${id}`);
   try {
-    const r = await fetch(`/wifi/${id}/json`);
-    const data = await r.json();
+    let data = null;
+    if (navigator.onLine) {
+      try {
+        const r = await fetch(`/wifi/${id}/json`);
+        if (r.ok) data = await r.json();
+      } catch (e) {}
+    }
+
+    if (!data || data.error) {
+      const cached = (window._cachedWifiPoints || []).find(p => String(p.id) === String(id));
+      if (cached) {
+        data = {
+          wifi: { ...cached, captive_portal: cached.captive_portal ? 1 : 0 },
+          stats: {
+            works: 0,
+            broken: 0,
+            avg_download: cached.download_mbps,
+            avg_upload: cached.upload_mbps,
+            avg_ping: cached.ping_ms
+          },
+          comments: [],
+          history: []
+        };
+      } else {
+        throw new Error('Point non disponible hors-ligne');
+      }
+    }
+
     const { wifi, stats, comments } = data;
-    const hist = data.history;
+    const hist = data.history || [];
     title.textContent = `📶 ${wifi.ssid}`;
     const scoreColor = wifi.confidence_score >= 80 ? '#2ecc71' : wifi.confidence_score >= 60 ? '#f1c40f' : wifi.confidence_score >= 35 ? '#e67e22' : '#e74c3c';
 
     const infoCard = `<div class="detail-card">
       <h3>${UI.network}</h3>
-      <p>${UI.enc_open === wifi.encryption ? UI.open : wifi.encryption.toUpperCase()} : <strong>${fmtEncryption(wifi.encryption)}</strong></p>
-      ${wifi.password ? `<p>${UI.save} : <code class="pwd-reveal">${escapeHtml(wifi.password)}</code></p>` : ''}
+      <p>${UI.enc_open === wifi.encryption ? UI.open : (wifi.encryption || '').toUpperCase()} : <strong>${fmtEncryption(wifi.encryption)}</strong></p>
+      ${wifi.password ? `<p>${UI.password} : <code class="pwd-reveal">${escapeHtml(wifi.password)}</code></p>` : ''}
       <p>Captive portal : <strong>${wifi.captive_portal ? 'Oui' : 'Non'}</strong></p>
       ${wifi.gateway ? `<p>Passerelle : <code>${escapeHtml(wifi.gateway)}</code></p>` : ''}
       ${wifi.dhcp_range ? `<p>DHCP : <code>${escapeHtml(wifi.dhcp_range)}</code></p>` : ''}
       ${wifi.isp ? `<p>FAI : <strong>${escapeHtml(wifi.isp)}</strong></p>` : ''}
       ${wifi.place_type ? `<p>Lieu : <strong>${escapeHtml(wifi.place_type)}</strong></p>` : ''}
       ${wifi.hours ? `<p>Horaires : <strong>${escapeHtml(wifi.hours)}</strong></p>` : ''}
-      ${wifi.author_name && !wifi.anonymous ? `<p>Ajouté par : <strong><a href="/u/${wifi.author_id}" style="color:var(--primary);text-decoration:none">${wifi.author_name}</a></strong></p>` : wifi.anonymous ? `<p>Ajouté par : <strong>Anonyme</strong></p>` : ''}
-      ${wifi.last_verified ? `<p style="color:var(--text-muted);font-size:.8rem">Vérifié le ${new Date(wifi.last_verified).toLocaleDateString('fr-FR')}</p>` : ''}
+      ${wifi.author_name && !wifi.anonymous ? `<p>Ajouté par : <strong><a href="/u/${wifi.author_id}" style="color:var(--primary);text-decoration:none">${escapeHtml(wifi.author_name)}</a></strong></p>` : wifi.anonymous ? `<p>Ajouté par : <strong>Anonyme</strong></p>` : ''}
+      ${wifi.last_verified ? `<p style="color:var(--text-muted);font-size:.8rem">Vérifié le ${new Date(wifi.last_verified).toLocaleDateString(LANG === 'fr' ? 'fr-FR' : 'en-GB')}</p>` : ''}
     </div>`;
 
     const perfCard = `<div class="detail-card" style="margin-top:.75rem">

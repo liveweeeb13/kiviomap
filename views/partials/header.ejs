@@ -6,6 +6,7 @@
   <title><%= typeof pageTitle !== 'undefined' ? pageTitle + ' • Kiviomap' : 'Kiviomap • Carte Wi-Fi collaborative' %></title>
   <meta name="description" content="<%= typeof pageDesc !== 'undefined' ? pageDesc : 'Kiviomap est une carte Wi-Fi collaborative. Trouvez, ajoutez et vérifiez des réseaux Wi-Fi publics autour de vous.' %>">
   <meta name="robots" content="index, follow">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <link rel="canonical" href="<%= typeof appUrl !== 'undefined' ? appUrl : '' %><%= typeof canonicalPath !== 'undefined' ? canonicalPath : '' %>">
 
   <!-- Open Graph -->
@@ -29,7 +30,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <link rel="stylesheet" href="/css/style.css?v=2">
-  
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#232220">
 </head>
 <body data-is-logged="<%= user ? 'true' : 'false' %>">
 <nav class="navbar">
