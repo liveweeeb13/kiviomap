@@ -40,7 +40,7 @@
     <button type="button" class="btn-primary donate-trigger" aria-haspopup="dialog" aria-controls="donate-modal">Faire un don</button>
     <% if (user) { %>
       <% if (user.role === 'admin') { %><a href="/admin" class="btn-primary"><%= t.nav.admin %></a><% } %>
-      <a href="/u/<%= user.id %>" class="user-badge" style="text-decoration:none;cursor:pointer;">
+      <a href="/u/<%= user.id %>" class="user-badge">
         <%= user.username %>
         <small><%= user.points %> pts</small>
       </a>

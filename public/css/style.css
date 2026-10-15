@@ -63,20 +63,53 @@ body {
   display: flex;
   align-items: center;
   gap: .5rem;
+  flex-wrap: wrap;
 }
 
-.nav-links a:not(.btn-primary) {
-  color: var(--text-soft);
-  text-decoration: none;
+.nav-links a,
+.nav-links button,
+.nav-links .btn-primary,
+.nav-links .user-badge {
+  height: 2.25rem;
+  padding: 0 .9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .35rem;
+  font-family: inherit;
   font-size: .875rem;
   font-weight: 500;
-  padding: .4rem .75rem;
+  line-height: 1;
   border-radius: var(--radius);
-  transition: color .15s;
+  border: 1px solid transparent;
+  box-sizing: border-box;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
 }
 
-.nav-links a:not(.btn-primary):hover {
+.nav-links a:not(.btn-primary):not(.user-badge) {
+  color: var(--text-soft);
+  background: transparent;
+}
+
+.nav-links a:not(.btn-primary):not(.user-badge):hover {
   color: var(--text);
+  background: var(--surface);
+}
+
+.nav-links .btn-primary,
+.nav-links button.btn-primary {
+  background: var(--primary);
+  color: #1c1a17;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.nav-links .btn-primary:hover,
+.nav-links button.btn-primary:hover {
+  background: var(--primary-dark);
 }
 
 /* ── USER BADGE ─────────────────────────────────────── */
@@ -84,17 +117,23 @@ body {
   font-weight: 600;
   font-size: .875rem;
   color: var(--text);
-  padding: .35rem .75rem;
   background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  border: 1px solid var(--border) !important;
+}
+
+.user-badge:hover {
+  background: var(--surface3);
+  border-color: var(--border2) !important;
 }
 
 .user-badge small {
-  font-weight: 400;
-  color: var(--text-muted);
+  font-weight: 500;
+  color: var(--primary);
+  background: rgba(200, 121, 65, .15);
+  padding: .2rem .4rem;
+  border-radius: 4px;
   font-size: .75rem;
-  margin-left: .25rem;
+  line-height: 1;
 }
 
 /* ── BUTTONS ────────────────────────────────────────── */
@@ -1229,20 +1268,20 @@ code {
   }
   .nav-links {
     flex-wrap: wrap;
-    gap: .3rem;
-    font-size: .8rem;
+    gap: .35rem;
   }
-  .nav-links a:not(.btn-primary) {
-    padding: .3rem .5rem;
+  .nav-links a,
+  .nav-links button,
+  .nav-links .btn-primary,
+  .nav-links .user-badge {
+    height: 2rem;
+    padding: 0 .65rem;
     font-size: .8rem;
+    gap: .25rem;
   }
-  .btn-primary, a.btn-primary {
-    padding: .4rem .8rem;
-    font-size: .8rem;
-  }
-  .user-badge {
-    font-size: .75rem;
-    padding: .25rem .5rem;
+  .user-badge small {
+    font-size: .7rem;
+    padding: .15rem .3rem;
   }
   .detail-page {
     padding: 1rem .75rem;
