@@ -59,6 +59,15 @@ body {
   letter-spacing: -.5px;
 }
 
+/* Cacher le bouton Kiviomap si ça dépasse */
+.navbar.hide-brand .nav-brand {
+  display: none !important;
+}
+.navbar.hide-brand,
+.navbar.hide-brand .nav-links {
+  justify-content: center;
+}
+
 .nav-links {
   display: flex;
   align-items: center;
@@ -1266,13 +1275,19 @@ code {
 /* ── RESPONSIVE ─────────────────────────────────────── */
 @media (max-width: 768px) {
   .navbar {
-    padding: .5rem .75rem;
-    gap: .4rem;
-    flex-wrap: wrap;
+    padding: .45rem .65rem;
+    gap: .3rem;
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+  .nav-brand {
+    font-size: 1.05rem;
+    flex-shrink: 0;
   }
   .nav-links {
-    gap: .3rem;
-    flex-wrap: wrap;
+    gap: .25rem;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
   }
   .nav-links a,
   .nav-links button,
@@ -1280,19 +1295,35 @@ code {
   .nav-links a.btn-primary,
   .nav-links button.btn-primary,
   .nav-links .user-badge {
-    height: 1.95rem;
-    padding: 0 .6rem;
-    font-size: .8rem;
-    gap: .25rem;
+    height: 1.85rem;
+    padding: 0 .48rem;
+    font-size: .76rem;
+    gap: .2rem;
+    min-width: auto;
+  }
+  .nav-links .btn-primary,
+  .nav-links a.btn-primary,
+  .nav-links button.btn-primary {
+    padding: 0 .55rem;
     min-width: auto;
   }
   .user-badge small {
-    font-size: .7rem;
-    padding: .1rem .3rem;
+    font-size: .68rem;
+    padding: .08rem .25rem;
   }
   .nav-register-btn,
   .nav-links a[href="/auth/register"] {
     display: none !important;
+  }
+}
+
+@media (max-width: 440px) {
+  .nav-brand {
+    display: none !important;
+  }
+  .navbar,
+  .navbar .nav-links {
+    justify-content: center;
   }
   .detail-page {
     padding: 1rem .75rem;
