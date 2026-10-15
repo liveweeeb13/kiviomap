@@ -19,19 +19,27 @@
   </div>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-<script src="/js/map.js?v=5"></script>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js').then(reg => {
-        console.log('[Kiviomap SW] Enregistré avec succès');
-      }).catch(err => {
-        console.warn('[Kiviomap SW] Erreur enregistrement:', err);
+<script src="/js/map.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.back-link').forEach(link => {
+        link.addEventListener('click', e => {
+          e.preventDefault();
+          history.back();
+        });
       });
+
+      const deleteForm = document.getElementById('delete-account-form');
+      if (deleteForm) {
+        deleteForm.addEventListener('submit', e => {
+          if (!confirm('Es-tu sûr ? Cette action est irréversible.')) {
+            e.preventDefault();
+          }
+        });
+      }
     });
-  }
-</script>
+  </script>
 </body>
 </html>

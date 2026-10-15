@@ -26,16 +26,5 @@
     &nbsp;·&nbsp;
     <a href="/privacy" class="legal-link"><%= t.footer.privacy %></a>
   </footer>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').then(reg => {
-          console.log('[Kiviomap SW] Enregistré');
-        }).catch(err => {
-          console.warn('[Kiviomap SW] Échec:', err);
-        });
-      });
-    }
-  </script>
 </body>
 </html>

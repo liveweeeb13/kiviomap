@@ -250,18 +250,13 @@ function csrfHeaders(extra = {}) {
   return { ...extra, 'x-csrf-token': CSRF_TOKEN };
 }
 <% if (wifi) { %>
-const WIFI_ID = '<%= wifi.id %>';
+const WIFI_ID = <%= wifi.id %>;
 
 async function doVerify(status) {
-  try {
-    const r = await fetch(`/wifi/${WIFI_ID}/verify`, { method: 'POST', headers: csrfHeaders({'Content-Type':'application/json'}), body: JSON.stringify({ status }) });
-    const json = await r.json();
-    if (r.status === 429) return showSnackbar(`<%= lang === 'fr' ? 'Cooldown actif, réessaye dans' : 'Cooldown active, retry in' %> ${json.remaining}h`);
-    if (r.ok) location.reload();
-    else showSnackbar(json.error || '<%= lang === "fr" ? "Erreur lors de la vérification." : "Verification error." %>');
-  } catch (err) {
-    showSnackbar('<%= lang === "fr" ? "Erreur de connexion." : "Connection error." %>');
-  }
+  const r = await fetch(`/wifi/${WIFI_ID}/verify`, { method: 'POST', headers: csrfHeaders({'Content-Type':'application/json'}), body: JSON.stringify({ status }) });
+  const json = await r.json();
+  if (r.status === 429) return showSnackbar(`<%= lang === 'fr' ? 'Cooldown actif, réessaye dans' : 'Cooldown active, retry in' %> ${json.remaining}h`);
+  if (r.ok) location.reload();
 }
 
 document.querySelectorAll('.verify-btn').forEach(btn => {
@@ -299,7 +294,6 @@ document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e =
 
 function paginate(containerId, paginationId, perPage) {
   const container = document.getElementById(containerId);
-  if (!container) return;
   const items = Array.from(container.children);
   const total = items.length;
   if (total <= perPage) return;
