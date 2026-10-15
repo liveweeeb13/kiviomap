@@ -60,5 +60,12 @@
     &nbsp;·&nbsp;
     <a href="/privacy" class="legal-link"><%= t.footer.privacy %></a>
   </footer>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(regs => {
+        for (const reg of regs) reg.unregister();
+      });
+    }
+  </script>
 </body>
 </html>

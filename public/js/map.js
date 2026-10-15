@@ -58,9 +58,10 @@ function csrfHeaders(extra = {}) {
 
 document.addEventListener('DOMContentLoaded', () => {
   map = L.map('map', { maxZoom: 19 }).setView([48.8566, 2.3522], 13);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    maxZoom: 19
+    maxZoom: 19,
+    referrerPolicy: 'strict-origin-when-cross-origin'
   }).addTo(map);
 
   // Restaure la position depuis le hash ou le localStorage
