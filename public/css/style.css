@@ -41,7 +41,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: .875rem 2rem;
+  padding: .65rem 1.25rem;
   background: var(--bg2);
   border-bottom: 1px solid var(--border);
   position: sticky;
@@ -62,22 +62,20 @@ body {
 .nav-links {
   display: flex;
   align-items: center;
-  gap: .5rem;
+  gap: .4rem;
   flex-wrap: wrap;
 }
 
 .nav-links a,
-.nav-links button,
-.nav-links .btn-primary,
-.nav-links .user-badge {
-  height: 2.25rem;
-  padding: 0 .9rem;
+.nav-links button {
+  height: 2.15rem;
+  padding: 0 .75rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: .35rem;
   font-family: inherit;
-  font-size: .875rem;
+  font-size: .84rem;
   font-weight: 500;
   line-height: 1;
   border-radius: var(--radius);
@@ -92,6 +90,7 @@ body {
 .nav-links a:not(.btn-primary):not(.user-badge) {
   color: var(--text-soft);
   background: transparent;
+  padding: 0 .6rem;
 }
 
 .nav-links a:not(.btn-primary):not(.user-badge):hover {
@@ -100,14 +99,19 @@ body {
 }
 
 .nav-links .btn-primary,
+.nav-links a.btn-primary,
 .nav-links button.btn-primary {
   background: var(--primary);
-  color: #1c1a17;
+  color: #1c1a17 !important;
   font-weight: 600;
   border: 1px solid transparent;
+  min-width: 6.2rem;
+  text-align: center;
+  padding: 0 .85rem;
 }
 
 .nav-links .btn-primary:hover,
+.nav-links a.btn-primary:hover,
 .nav-links button.btn-primary:hover {
   background: var(--primary-dark);
 }
@@ -1262,26 +1266,33 @@ code {
 /* ── RESPONSIVE ─────────────────────────────────────── */
 @media (max-width: 768px) {
   .navbar {
-    padding: .6rem 1rem;
-    gap: .5rem;
+    padding: .5rem .75rem;
+    gap: .4rem;
     flex-wrap: wrap;
   }
   .nav-links {
+    gap: .3rem;
     flex-wrap: wrap;
-    gap: .35rem;
   }
   .nav-links a,
   .nav-links button,
   .nav-links .btn-primary,
+  .nav-links a.btn-primary,
+  .nav-links button.btn-primary,
   .nav-links .user-badge {
-    height: 2rem;
-    padding: 0 .65rem;
+    height: 1.95rem;
+    padding: 0 .6rem;
     font-size: .8rem;
     gap: .25rem;
+    min-width: auto;
   }
   .user-badge small {
     font-size: .7rem;
-    padding: .15rem .3rem;
+    padding: .1rem .3rem;
+  }
+  .nav-register-btn,
+  .nav-links a[href="/auth/register"] {
+    display: none !important;
   }
   .detail-page {
     padding: 1rem .75rem;
