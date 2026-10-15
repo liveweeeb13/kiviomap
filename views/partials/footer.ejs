@@ -1,6 +1,40 @@
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<div class="donate-modal" id="donate-modal" aria-hidden="true">
+  <div class="donate-modal__backdrop" data-donate-close></div>
+  <section class="donate-dialog" role="dialog" aria-modal="true" aria-labelledby="donate-title" aria-describedby="donate-description">
+    <button type="button" class="donate-close" aria-label="Fermer" data-donate-close>&times;</button>
+    <span class="donate-eyebrow">Soutenir Kiviomap</span>
+    <h2 id="donate-title">Choisis comment contribuer</h2>
+    <p id="donate-description">Chaque don aide à garder kiviomap gratuit.</p>
+    <a class="donate-option donate-option--paypal" href="https://paypal.me/liveweeeb" target="_blank" rel="noopener noreferrer"><span class="donate-option__icon" aria-hidden="true"><i class="bi bi-paypal"></i></span><span class="donate-option__copy"><strong>PayPal</strong><small>Le moyen recommandé · sans frais</small></span><span class="donate-option__arrow" aria-hidden="true">→</span></a>
+    <a class="donate-option" href="https://ko-fi.com/liveweeeb" target="_blank" rel="noopener noreferrer"><span class="donate-option__icon" aria-hidden="true"><svg class="kofi-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.352.24 7.422-2.831 6.649-6.916zm-11.062 3.511c-1.246 1.453-4.011 3.976-4.011 3.976s-.121.119-.31.023c-.076-.057-.108-.09-.108-.09-.443-.441-3.368-3.049-4.034-3.954-.709-.965-1.041-2.7-.091-3.71.951-1.01 3.005-1.086 4.363.407 0 0 1.565-1.782 3.468-.963 1.904.82 1.832 3.011.723 4.311zm6.173.478c-.928.116-1.682.028-1.682.028V7.284h1.77s1.971.551 1.971 2.638c0 1.913-.985 2.667-2.059 3.015z"/></svg></span><span class="donate-option__copy"><strong>Ko-fi</strong><small>Non recommandé · avec frais</small></span><span class="donate-option__arrow" aria-hidden="true">→</span></a>
+  </section>
+</div>  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
   <script>
+    (() => {
+      const donateModal = document.getElementById('donate-modal');
+      const donateTrigger = document.querySelector('.donate-trigger');
+      let previousFocus;
+      const closeDonateModal = () => {
+        if (!donateModal) return;
+        donateModal.classList.remove('is-open');
+        donateModal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('modal-open');
+        previousFocus?.focus();
+      };
+      donateTrigger?.addEventListener('click', () => {
+        previousFocus = document.activeElement;
+        donateModal.classList.add('is-open');
+        donateModal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('modal-open');
+        donateModal.querySelector('.donate-close').focus();
+      });
+      donateModal?.querySelectorAll('[data-donate-close]').forEach(button => button.addEventListener('click', closeDonateModal));
+      document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && donateModal?.classList.contains('is-open')) closeDonateModal();
+      });
+    })();
+
     document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.back-link').forEach(link => {
         link.addEventListener('click', e => {

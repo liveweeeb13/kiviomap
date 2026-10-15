@@ -1504,3 +1504,27 @@ code {
   text-align: center;
   font-weight: 600;
 }
+
+/* Donation choice modal */
+body.modal-open { overflow: hidden; }
+.donate-trigger { font: inherit; }
+.donate-modal { position: fixed; inset: 0; z-index: 2000; display: none; align-items: center; justify-content: center; padding: 1rem; }
+.donate-modal.is-open { display: flex; }
+.donate-modal__backdrop { position: absolute; inset: 0; background: rgba(8,8,8,.72); backdrop-filter: blur(3px); }
+.donate-dialog { position: relative; width: min(100%, 440px); padding: 2rem; background: var(--surface); border: 1px solid var(--border2); border-radius: 16px; box-shadow: 0 24px 80px rgba(0,0,0,.5); animation: donate-enter .18s ease-out; }
+.donate-close { position: absolute; top: .8rem; right: .9rem; width: 2rem; height: 2rem; border: 0; border-radius: 50%; background: var(--surface2); color: var(--text-soft); font-size: 1.4rem; cursor: pointer; }
+.donate-eyebrow { color: var(--primary); text-transform: uppercase; letter-spacing: .12em; font-size: .7rem; font-weight: 700; }
+.donate-dialog h2 { margin: .5rem 2rem .5rem 0; font-size: 1.45rem; }
+.donate-dialog > p { margin-bottom: 1.5rem; color: var(--text-muted); font-size: .9rem; line-height: 1.55; }
+.donate-option { display: flex; align-items: center; gap: .85rem; margin-top: .7rem; padding: .9rem; color: var(--text); text-decoration: none; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; transition: transform .15s, border-color .15s, background .15s; }
+.donate-option:hover { transform: translateY(-1px); border-color: var(--border2); background: var(--surface3); }
+.donate-option--paypal { background: #123f59; border-color: #1670a0; }
+.donate-option--paypal:hover { background: #164f70; border-color: #228fc4; }
+.donate-option__icon { display: grid; place-items: center; flex: 0 0 2.5rem; height: 2.5rem; border-radius: 8px; background: rgba(255,255,255,.09); font-size: 1.2rem; }
+.kofi-mark { width: 1.25rem; height: 1.25rem; fill: currentColor; display: block; }
+.donate-option__copy { display: grid; gap: .2rem; flex: 1; }
+.donate-option__copy strong { font-size: .95rem; }
+.donate-option__copy small { color: var(--text-soft); font-size: .73rem; }
+.donate-option__arrow { font-size: 1.2rem; color: var(--text-muted); }
+@keyframes donate-enter { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@media (max-width: 480px) { .donate-dialog { padding: 1.5rem; } }
