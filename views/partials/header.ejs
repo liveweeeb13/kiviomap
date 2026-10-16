@@ -30,6 +30,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <link rel="stylesheet" href="/css/style.css?v=6">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&display=swap"> <!-- Halloween TEXT -->
   
 </head>
 <body data-is-logged="<%= user ? 'true' : 'false' %>">
@@ -37,7 +38,7 @@
   <a class="nav-brand" href="/">Kiviomap</a>
   <div class="nav-links">
     <a href="/leaderboard"><%= t.nav.leaderboard %></a>
-    <button type="button" class="btn-primary donate-trigger" aria-haspopup="dialog" aria-controls="donate-modal">Faire un don</button>
+    <button type="button" class="btn-primary donate-trigger" aria-haspopup="dialog" aria-controls="donate-modal">Offrir des bonbons</button>
     <% if (user) { %>
       <% if (user.role === 'admin') { %><a href="/admin" class="btn-primary"><%= t.nav.admin %></a><% } %>
       <a href="/u/<%= user.id %>" class="user-badge">
